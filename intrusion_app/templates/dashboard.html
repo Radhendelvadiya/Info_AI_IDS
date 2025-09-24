@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Info IDS | Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800 text-white min-h-screen font-sans flex">
+
+  <!-- Sidebar -->
+<aside class="w-64 bg-slate-900/95 backdrop-blur p-6 flex flex-col space-y-4 border-r border-gray-700 shadow-lg">
+    <h1 class="text-2xl font-bold text-cyan-400 mb-6">Info IDS</h1>
+    <nav class="flex flex-col space-y-6"> <!-- Increased space between items -->
+        <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
+            Dashboard
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
+            Upload Data
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
+            Reports
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
+            Settings
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
+            Logout
+        </a>
+    </nav>
+</aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-6 space-y-8">
+
+      <!-- Header -->
+      <header class="bg-slate-800/90 p-6 rounded-2xl shadow-lg text-center">
+          <h2 class="text-4xl font-extrabold text-cyan-400 tracking-wide">AI Intrusion Detection System</h2>
+          <p class="mt-2 text-gray-300">Monitoring Network Threats in Real-Time</p>
+      </header>
+
+      <!-- Key Stats -->
+      <section class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="bg-slate-800 p-6 rounded-2xl shadow-md hover:scale-105 transition">
+              <h3 class="text-lg font-bold text-cyan-400">Active Alerts</h3>
+              <p class="mt-2 text-4xl font-extrabold">12</p>
+              <p class="text-gray-400 text-sm">Last 24h</p>
+          </div>
+          <div class="bg-slate-800 p-6 rounded-2xl shadow-md hover:scale-105 transition">
+              <h3 class="text-lg font-bold text-cyan-400">Network Traffic</h3>
+              <p class="mt-2 text-4xl font-extrabold">1.8 GB</p>
+              <p class="text-gray-400 text-sm">Today</p>
+          </div>
+          <div class="bg-slate-800 p-6 rounded-2xl shadow-md hover:scale-105 transition">
+              <h3 class="text-lg font-bold text-cyan-400">Accuracy</h3>
+              <p class="mt-2 text-4xl font-extrabold">97%</p>
+              <p class="text-gray-400 text-sm">ML Model</p>
+          </div>
+          <div class="bg-slate-800 p-6 rounded-2xl shadow-md hover:scale-105 transition">
+              <h3 class="text-lg font-bold text-cyan-400">Uptime</h3>
+              <p class="mt-2 text-4xl font-extrabold">99.9%</p>
+              <p class="text-gray-400 text-sm">This Week</p>
+          </div>
+      </section>
+
+      <!-- Charts Grid -->
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Pie Chart -->
+          <div class="bg-slate-800 p-6 rounded-2xl shadow-md">
+              <h3 class="text-xl font-bold text-cyan-400 mb-4">Attack Distribution</h3>
+              <canvas id="attackPie"></canvas>
+          </div>
+
+          <!-- Line Chart -->
+          <div class="bg-slate-800 p-6 rounded-2xl shadow-md">
+              <h3 class="text-xl font-bold text-cyan-400 mb-4">Alerts Over Time</h3>
+              <canvas id="alertsLine"></canvas>
+          </div>
+
+          <!-- Bar Chart -->
+          <div class="bg-slate-800 p-6 rounded-2xl shadow-md">
+              <h3 class="text-xl font-bold text-cyan-400 mb-4">Attack Types</h3>
+              <canvas id="attackBar"></canvas>
+          </div>
+
+          <!-- Radar Chart -->
+          <div class="bg-slate-800 p-6 rounded-2xl shadow-md">
+              <h3 class="text-xl font-bold text-cyan-400 mb-4">Threat Radar</h3>
+              <canvas id="attackRadar"></canvas>
+          </div>
+      </section>
+
+      <!-- Logs -->
+      <section class="bg-slate-800 p-6 rounded-2xl shadow-md">
+          <h3 class="text-xl font-bold text-cyan-400 mb-4">Recent Alerts</h3>
+          <table class="w-full text-left border-collapse">
+              <thead>
+                  <tr class="text-gray-400 text-sm border-b border-gray-700">
+                      <th class="p-2">Time</th>
+                      <th class="p-2">Source IP</th>
+                      <th class="p-2">Attack</th>
+                      <th class="p-2">Severity</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <tr class="hover:bg-slate-700 transition">
+                      <td class="p-2">12:15 PM</td>
+                      <td class="p-2">192.168.1.45</td>
+                      <td class="p-2">DoS</td>
+                      <td class="p-2 text-red-500 font-bold">High</td>
+                  </tr>
+                  <tr class="hover:bg-slate-700 transition">
+                      <td class="p-2">11:50 AM</td>
+                      <td class="p-2">10.0.0.21</td>
+                      <td class="p-2">Probe</td>
+                      <td class="p-2 text-yellow-400 font-bold">Medium</td>
+                  </tr>
+                  <tr class="hover:bg-slate-700 transition">
+                      <td class="p-2">10:40 AM</td>
+                      <td class="p-2">172.16.0.9</td>
+                      <td class="p-2">R2L</td>
+                      <td class="p-2 text-orange-400 font-bold">Critical</td>
+                  </tr>
+              </tbody>
+          </table>
+      </section>
+
+      <!-- Status -->
+      <section class="text-center">
+          <div class="bg-cyan-400 text-gray-900 p-6 rounded-2xl shadow-lg animate-pulse">
+              <h3 class="text-2xl font-bold">System Status: ✅ Secure</h3>
+          </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="bg-slate-900 p-4 text-center text-gray-400 text-sm rounded-2xl">
+          © 2025 Info IDS | AI-Powered Intrusion Detection System
+      </footer>
+  </main>
+
+  <!-- Chart.js Config -->
+  <script>
+      // Pie
+      new Chart(document.getElementById('attackPie'), {
+          type: 'pie',
+          data: {
+              labels: ['DoS', 'Probe', 'R2L', 'U2R', 'Normal'],
+              datasets: [{
+                  data: [40, 25, 15, 5, 15],
+                  backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#8b5cf6','#10b981']
+              }]
+          }
+      });
+
+      // Line
+      new Chart(document.getElementById('alertsLine'), {
+          type: 'line',
+          data: {
+              labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+              datasets: [{
+                  label: 'Alerts',
+                  data: [5, 8, 6, 10, 12, 7, 9],
+                  borderColor: '#06b6d4',
+                  backgroundColor: 'rgba(6,182,212,0.2)',
+                  fill: true,
+                  tension: 0.4
+              }]
+          }
+      });
+
+      // Bar
+      new Chart(document.getElementById('attackBar'), {
+          type: 'bar',
+          data: {
+              labels: ['DoS','Probe','R2L','U2R','Normal'],
+              datasets: [{
+                  label: 'Count',
+                  data: [15, 8, 5, 2, 10],
+                  backgroundColor: '#3b82f6'
+              }]
+          }
+      });
+
+      // Radar
+      new Chart(document.getElementById('attackRadar'), {
+          type: 'radar',
+          data: {
+              labels: ['DoS','Probe','R2L','U2R','Brute Force'],
+              datasets: [{
+                  label: 'Threat Level',
+                  data: [9, 6, 7, 5, 8],
+                  borderColor: '#f59e0b',
+                  backgroundColor: 'rgba(245,158,11,0.2)'
+              }]
+          }
+      });
+  </script>
+
+</body>
+</html>
