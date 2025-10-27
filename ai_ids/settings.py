@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'intrusion_app',
     'tailwind',
+    'alerts',
     # 'theme',
 ]
 

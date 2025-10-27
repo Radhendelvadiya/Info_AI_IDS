@@ -1,3 +1,5 @@
+{% load alerts_extras %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,26 +12,26 @@
 <body class="bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800 text-white min-h-screen font-sans flex">
 
   <!-- Sidebar -->
-<aside class="w-64 bg-slate-900/95 backdrop-blur p-6 flex flex-col space-y-4 border-r border-gray-700 shadow-lg">
-    <h1 class="text-2xl font-bold text-cyan-400 mb-6">Info IDS</h1>
-    <nav class="flex flex-col space-y-6"> <!-- Increased space between items -->
-        <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
-            Dashboard
-        </a>
-        <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
-            Upload Data
-        </a>
-        <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
-            Reports
-        </a>
-        <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
-            Settings
-        </a>
-        <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
-            Logout
-        </a>
-    </nav>
-</aside>
+  <aside class="w-64 bg-slate-900/95 backdrop-blur p-6 flex flex-col space-y-4 border-r border-gray-700 shadow-lg">
+      <h1 class="text-2xl font-bold text-cyan-400 mb-6">Info IDS</h1>
+      <nav class="flex flex-col space-y-6">
+          <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
+              Dashboard
+          </a>
+          <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
+              Upload Data
+          </a>
+          <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
+              Reports
+          </a>
+          <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
+              Settings
+          </a>
+          <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
+              Logout
+          </a>
+      </nav>
+  </aside>
 
   <!-- Main Content -->
   <main class="flex-1 p-6 space-y-8">
@@ -44,7 +46,7 @@
       <section class="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div class="bg-slate-800 p-6 rounded-2xl shadow-md hover:scale-105 transition">
               <h3 class="text-lg font-bold text-cyan-400">Active Alerts</h3>
-              <p class="mt-2 text-4xl font-extrabold">12</p>
+              <p class="mt-2 text-4xl font-extrabold">{{ recent_alerts|length }}</p>
               <p class="text-gray-400 text-sm">Last 24h</p>
           </div>
           <div class="bg-slate-800 p-6 rounded-2xl shadow-md hover:scale-105 transition">
@@ -104,24 +106,19 @@
                   </tr>
               </thead>
               <tbody>
+                  {% for alert in recent_alerts %}
                   <tr class="hover:bg-slate-700 transition">
-                      <td class="p-2">12:15 PM</td>
-                      <td class="p-2">192.168.1.45</td>
-                      <td class="p-2">DoS</td>
-                      <td class="p-2 text-red-500 font-bold">High</td>
+                      <td class="p-2">{{ alert.timestamp|date:"H:i A" }}</td>
+                      <td class="p-2">{{ alert.source_ip }}</td>
+                      <td class="p-2">{{ alert.attack_type }}</td>
+                      <td class="p-2 
+                          {% if alert.severity == "High" or alert.severity == "Critical" %}text-red-500
+                          {% elif alert.severity == "Medium" %}text-yellow-400
+                          {% else %}text-green-400{% endif %} font-bold">
+                          {{ alert.severity }}
+                      </td>
                   </tr>
-                  <tr class="hover:bg-slate-700 transition">
-                      <td class="p-2">11:50 AM</td>
-                      <td class="p-2">10.0.0.21</td>
-                      <td class="p-2">Probe</td>
-                      <td class="p-2 text-yellow-400 font-bold">Medium</td>
-                  </tr>
-                  <tr class="hover:bg-slate-700 transition">
-                      <td class="p-2">10:40 AM</td>
-                      <td class="p-2">172.16.0.9</td>
-                      <td class="p-2">R2L</td>
-                      <td class="p-2 text-orange-400 font-bold">Critical</td>
-                  </tr>
+                  {% endfor %}
               </tbody>
           </table>
       </section>
@@ -141,26 +138,30 @@
 
   <!-- Chart.js Config -->
   <script>
-      // Pie
+      // Attack Distribution Pie Chart
+      const attackLabels = {{ attack_distribution|pluck:"attack_type"|safe }};
+      const attackData = {{ attack_distribution|pluck:"count"|safe }};
       new Chart(document.getElementById('attackPie'), {
           type: 'pie',
           data: {
-              labels: ['DoS', 'Probe', 'R2L', 'U2R', 'Normal'],
+              labels: attackLabels,
               datasets: [{
-                  data: [40, 25, 15, 5, 15],
+                  data: attackData,
                   backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#8b5cf6','#10b981']
               }]
           }
       });
 
-      // Line
+      // Alerts Over Time Line Chart
+      const alertsLabels = {{ alerts_over_time|pluck:"day"|safe }};
+      const alertsData = {{ alerts_over_time|pluck:"count"|safe }};
       new Chart(document.getElementById('alertsLine'), {
           type: 'line',
           data: {
-              labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+              labels: alertsLabels,
               datasets: [{
                   label: 'Alerts',
-                  data: [5, 8, 6, 10, 12, 7, 9],
+                  data: alertsData,
                   borderColor: '#06b6d4',
                   backgroundColor: 'rgba(6,182,212,0.2)',
                   fill: true,
@@ -169,27 +170,27 @@
           }
       });
 
-      // Bar
+      // Attack Types Bar Chart
       new Chart(document.getElementById('attackBar'), {
           type: 'bar',
           data: {
-              labels: ['DoS','Probe','R2L','U2R','Normal'],
+              labels: attackLabels,
               datasets: [{
                   label: 'Count',
-                  data: [15, 8, 5, 2, 10],
+                  data: attackData,
                   backgroundColor: '#3b82f6'
               }]
           }
       });
 
-      // Radar
+      // Threat Radar Chart
       new Chart(document.getElementById('attackRadar'), {
           type: 'radar',
           data: {
-              labels: ['DoS','Probe','R2L','U2R','Brute Force'],
+              labels: attackLabels,
               datasets: [{
                   label: 'Threat Level',
-                  data: [9, 6, 7, 5, 8],
+                  data: attackData,
                   borderColor: '#f59e0b',
                   backgroundColor: 'rgba(245,158,11,0.2)'
               }]
