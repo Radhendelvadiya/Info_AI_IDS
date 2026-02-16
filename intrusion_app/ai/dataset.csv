@@ -1,0 +1,15 @@
+duration,src_bytes,dst_bytes,count,srv_count,protocol,attack
+0,181,5450,2,2,tcp,normal
+0,239,486,3,3,tcp,normal
+2,235,1337,8,8,udp,normal
+0,199,420,2,2,tcp,normal
+3,350,12000,30,25,tcp,attack
+5,500,15000,45,40,tcp,attack
+1,1000,50,60,60,icmp,attack
+0,150,300,2,2,udp,normal
+2,800,2000,35,30,tcp,attack
+0,120,400,1,1,tcp,normal
+4,900,5000,50,45,udp,attack
+0,90,200,1,1,tcp,normal
+1,400,7000,20,15,tcp,attack
+0,160,350,2,2,icmp,normal

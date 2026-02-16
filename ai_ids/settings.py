@@ -38,8 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'intrusion_app',
+    'channels',
     'tailwind',
     'alerts',
+    'accounts',
+    'django.contrib.sites',
     # 'theme',
 ]
 
@@ -51,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'ai_ids.urls'
@@ -73,6 +77,19 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ai_ids.wsgi.application'
+
+# Channels (ASGI) setup
+ASGI_APPLICATION = 'ai_ids.asgi.application'
+
+# Use in-memory channel layer for development (not for production)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    }
+}
+
+# Enable OS-level blocking (set to True to allow admin OS firewall changes)
+IDS_ENABLE_OS_BLOCKING = False
 
 
 # Database
@@ -126,3 +143,41 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SITE_ID = 1
+
+# AUTH_USER_MODEL = 'accounts.User'
+
+
+INSTALLED_APPS += [
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.microsoft',
+]
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
+SOCIALACCOUNT_LOGIN_ON_GET = True
+ACCOUNT_LOGOUT_ON_GET = True
+
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+# ms account info and tant alloctaion 
+SOCIALACCOUNT_PROVIDERS = {
+    "microsoft": {
+        "TENANT": "common",   # or your tenant id
+    }
+}
+

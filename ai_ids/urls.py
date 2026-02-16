@@ -21,4 +21,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('intrusion_app.urls')),
     path('', include('alerts.urls')),
+
+    # accounts app
+    path("accounts/", include("accounts.urls")),
+
+    # allauth (google / microsoft login)
+    path("accounts/", include("allauth.urls")),
 ]

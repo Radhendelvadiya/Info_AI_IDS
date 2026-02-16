@@ -1,202 +1,509 @@
+{% load static %}
 {% load alerts_extras %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Info IDS | Dashboard</title>
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js CDN (NO LOCAL FILE NEEDED) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800 text-white min-h-screen font-sans flex">
 
-  <!-- Sidebar -->
-  <aside class="w-64 bg-slate-900/95 backdrop-blur p-6 flex flex-col space-y-4 border-r border-gray-700 shadow-lg">
-      <h1 class="text-2xl font-bold text-cyan-400 mb-6">Info IDS</h1>
-      <nav class="flex flex-col space-y-6">
-          <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
-              Dashboard
-          </a>
-          <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
-              Upload Data
-          </a>
-          <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
-              Reports
-          </a>
-          <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
-              Settings
-          </a>
-          <a href="#" class="flex items-center px-4 py-3 rounded-xl hover:bg-cyan-500/20 hover:border-l-4 hover:border-cyan-400 transition">
-              Logout
-          </a>
-      </nav>
-  </aside>
+<style>
+@keyframes slideInToast {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+</style>
 
-  <!-- Main Content -->
-  <main class="flex-1 p-6 space-y-8">
+<body class="bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800 text-white min-h-screen flex">
 
-      <!-- Header -->
-      <header class="bg-slate-800/90 p-6 rounded-2xl shadow-lg text-center">
-          <h2 class="text-4xl font-extrabold text-cyan-400 tracking-wide">AI Intrusion Detection System</h2>
-          <p class="mt-2 text-gray-300">Monitoring Network Threats in Real-Time</p>
-      </header>
+<!-- ================= SIDEBAR ================= -->
+<aside
+  class="w-64 bg-slate-900 p-6 border-r border-gray-700
+         fixed left-0 top-0 h-screen
+         flex flex-col">
 
-      <!-- Key Stats -->
-      <section class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div class="bg-slate-800 p-6 rounded-2xl shadow-md hover:scale-105 transition">
-              <h3 class="text-lg font-bold text-cyan-400">Active Alerts</h3>
-              <p class="mt-2 text-4xl font-extrabold">{{ recent_alerts|length }}</p>
-              <p class="text-gray-400 text-sm">Last 24h</p>
-          </div>
-          <div class="bg-slate-800 p-6 rounded-2xl shadow-md hover:scale-105 transition">
-              <h3 class="text-lg font-bold text-cyan-400">Network Traffic</h3>
-              <p class="mt-2 text-4xl font-extrabold">1.8 GB</p>
-              <p class="text-gray-400 text-sm">Today</p>
-          </div>
-          <div class="bg-slate-800 p-6 rounded-2xl shadow-md hover:scale-105 transition">
-              <h3 class="text-lg font-bold text-cyan-400">Accuracy</h3>
-              <p class="mt-2 text-4xl font-extrabold">97%</p>
-              <p class="text-gray-400 text-sm">ML Model</p>
-          </div>
-          <div class="bg-slate-800 p-6 rounded-2xl shadow-md hover:scale-105 transition">
-              <h3 class="text-lg font-bold text-cyan-400">Uptime</h3>
-              <p class="mt-2 text-4xl font-extrabold">99.9%</p>
-              <p class="text-gray-400 text-sm">This Week</p>
-          </div>
-      </section>
+  <!-- TOP (Scrollable Menu) -->
+  <div class="flex-1 overflow-y-auto">
+    <h1 class="text-2xl font-bold text-cyan-400 mb-6">Info IDS</h1>
 
-      <!-- Charts Grid -->
-      <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Pie Chart -->
-          <div class="bg-slate-800 p-6 rounded-2xl shadow-md">
-              <h3 class="text-xl font-bold text-cyan-400 mb-4">Attack Distribution</h3>
-              <canvas id="attackPie"></canvas>
-          </div>
+    <nav class="space-y-4">
+      <a class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">Dashboard</a>
+      <a class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">Upload Data</a>
+      <a class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">Reports</a>
+      <a class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">Settings</a>
+    </nav>
+  </div>
 
-          <!-- Line Chart -->
-          <div class="bg-slate-800 p-6 rounded-2xl shadow-md">
-              <h3 class="text-xl font-bold text-cyan-400 mb-4">Alerts Over Time</h3>
-              <canvas id="alertsLine"></canvas>
-          </div>
+  <!-- BOTTOM USER PROFILE -->
+  <div class="border-t border-gray-700 pt-4 mt-4 bg-slate-900">
 
-          <!-- Bar Chart -->
-          <div class="bg-slate-800 p-6 rounded-2xl shadow-md">
-              <h3 class="text-xl font-bold text-cyan-400 mb-4">Attack Types</h3>
-              <canvas id="attackBar"></canvas>
-          </div>
+    <div class="flex items-center gap-3 min-w-0">
 
-          <!-- Radar Chart -->
-          <div class="bg-slate-800 p-6 rounded-2xl shadow-md">
-              <h3 class="text-xl font-bold text-cyan-400 mb-4">Threat Radar</h3>
-              <canvas id="attackRadar"></canvas>
-          </div>
-      </section>
+      <!-- PROFILE IMAGE (FIXED) -->
+      {% with user.socialaccount_set.first as social %}
+        <img
+          src="{% if social and social.get_avatar_url %}
+                 {{ social.get_avatar_url }}
+               {% else %}
+                 {% static 'images/default-avatar.png' %}
+               {% endif %}"
+          alt="Profile"
+          class="w-10 h-10 rounded-full border border-cyan-400
+                 object-cover flex-shrink-0
+                 hover:ring-2 hover:ring-cyan-400 transition"
+        />
+      {% endwith %}
 
-      <!-- Logs -->
-      <section class="bg-slate-800 p-6 rounded-2xl shadow-md">
-          <h3 class="text-xl font-bold text-cyan-400 mb-4">Recent Alerts</h3>
-          <table class="w-full text-left border-collapse">
-              <thead>
-                  <tr class="text-gray-400 text-sm border-b border-gray-700">
-                      <th class="p-2">Time</th>
-                      <th class="p-2">Source IP</th>
-                      <th class="p-2">Attack</th>
-                      <th class="p-2">Severity</th>
-                  </tr>
-              </thead>
-              <tbody>
-                  {% for alert in recent_alerts %}
-                  <tr class="hover:bg-slate-700 transition">
-                      <td class="p-2">{{ alert.timestamp|date:"H:i A" }}</td>
-                      <td class="p-2">{{ alert.source_ip }}</td>
-                      <td class="p-2">{{ alert.attack_type }}</td>
-                      <td class="p-2 
-                          {% if alert.severity == "High" or alert.severity == "Critical" %}text-red-500
-                          {% elif alert.severity == "Medium" %}text-yellow-400
-                          {% else %}text-green-400{% endif %} font-bold">
-                          {{ alert.severity }}
-                      </td>
-                  </tr>
-                  {% endfor %}
-              </tbody>
-          </table>
-      </section>
+      <!-- NAME / EMAIL -->
+      <div class="text-sm min-w-0">
+        <p class="font-semibold truncate max-w-[150px]">
+          {% if user.get_full_name %}
+            {{ user.get_full_name }}
+          {% else %}
+            {{ user.email }}
+          {% endif %}
+        </p>
+        <p class="text-xs text-gray-400">Authenticated</p>
+      </div>
+    </div>
 
-      <!-- Status -->
-      <section class="text-center">
-          <div class="bg-cyan-400 text-gray-900 p-6 rounded-2xl shadow-lg animate-pulse">
-              <h3 class="text-2xl font-bold">System Status: ✅ Secure</h3>
-          </div>
-      </section>
+    <!-- LOGOUT -->
+    <form method="post" action="{% url 'account_logout' %}" class="mt-4">
+      {% csrf_token %}
+      <button
+        class="w-full text-left px-4 py-2 rounded-xl
+               text-red-400 hover:bg-red-500/10 transition">
+        Logout
+      </button>
+    </form>
 
-      <!-- Footer -->
-      <footer class="bg-slate-900 p-4 text-center text-gray-400 text-sm rounded-2xl">
-          © 2025 Info IDS | AI-Powered Intrusion Detection System
-      </footer>
-  </main>
+  </div>
+</aside>
 
-  <!-- Chart.js Config -->
-  <script>
-      // Attack Distribution Pie Chart
-      const attackLabels = {{ attack_distribution|pluck:"attack_type"|safe }};
-      const attackData = {{ attack_distribution|pluck:"count"|safe }};
-      new Chart(document.getElementById('attackPie'), {
-          type: 'pie',
-          data: {
-              labels: attackLabels,
-              datasets: [{
-                  data: attackData,
-                  backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#8b5cf6','#10b981']
-              }]
-          }
+
+<!-- ================= MAIN ================= -->
+<main class="flex-1 p-6 space-y-8 ml-64">
+
+<!-- Header -->
+<header class="bg-slate-800 p-6 rounded-2xl text-center">
+  <h2 class="text-4xl font-extrabold text-cyan-400">AI Intrusion Detection System</h2>
+  <p class="text-gray-400">Real-Time Network Monitoring</p>
+</header>
+
+<!-- ================= STATS ================= -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-6">
+  <div class="bg-slate-800 p-6 rounded-2xl">
+    <h3 class="text-cyan-400">Active Alerts</h3>
+    <h2 id="activeAlerts" class="text-4xl font-bold">0</h2>
+    <p class="text-sm text-gray-400">Last 24h</p>
+  </div>
+
+  <div class="bg-slate-800 p-6 rounded-2xl">
+    <h3 class="text-cyan-400">Network Traffic</h3>
+    <h2 id="networkTraffic" class="text-4xl font-bold">0 GB</h2>
+    <p class="text-sm text-gray-400">Today</p>
+  </div>
+
+  <div class="bg-slate-800 p-6 rounded-2xl">
+    <h3 class="text-cyan-400">Accuracy</h3>
+    <h2 id="accuracy" class="text-4xl font-bold">97%</h2>
+    <p class="text-sm text-gray-400">ML Model</p>
+  </div>
+
+  <div class="bg-slate-800 p-6 rounded-2xl">
+    <h3 class="text-cyan-400">Uptime</h3>
+    <h2 id="uptime" class="text-4xl font-bold">99.9%</h2>
+    <p class="text-sm text-gray-400">This Week</p>
+  </div>
+</section>
+
+<!-- ================= CHARTS ================= -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-slate-800 p-6 rounded-2xl">
+    <h3 class="text-cyan-400 mb-4">Attack Distribution</h3>
+    <canvas id="attackPie"></canvas>
+  </div>
+
+  <div class="bg-slate-800 p-6 rounded-2xl">
+    <h3 class="text-cyan-400 mb-4">Alerts Over Time</h3>
+    <canvas id="alertsLine"></canvas>
+  </div>
+
+  <div class="bg-slate-800 p-6 rounded-2xl">
+    <h3 class="text-cyan-400 mb-4">Attack Types</h3>
+    <canvas id="attackBar"></canvas>
+  </div>
+
+  <div class="bg-slate-800 p-6 rounded-2xl">
+    <h3 class="text-cyan-400 mb-4">Threat Radar</h3>
+    <canvas id="attackRadar"></canvas>
+  </div>
+</section>
+
+<!-- ================= RECENT ALERTS & BLOCKED IPS ================= -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-slate-800 p-6 rounded-2xl">
+    <h3 class="text-cyan-400 mb-4">Recent Alerts</h3>
+    <ul id="recentAlertsList" class="space-y-2 text-sm text-gray-300 max-h-60 overflow-auto">
+      <li>No alerts yet</li>
+    </ul>
+  </div>
+
+  <div class="bg-slate-800 p-6 rounded-2xl">
+    <h3 class="text-cyan-400 mb-4">Blocked IPs</h3>
+    <ul id="blockedIPsList" class="space-y-2 text-sm text-gray-300 max-h-60 overflow-auto">
+      <li>No blocked IPs</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= TOAST ================= -->
+<!-- AI Intrusion Alert -->
+<div id="aiToast"
+     style="
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 360px;
+        background: linear-gradient(145deg, #020617, #020617);
+        color: white;
+        padding: 18px 20px;
+        border-radius: 18px;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+        border: 1.5px solid #ef4444;
+        display: none;
+        z-index: 9999;
+        animation: slideInToast 0.35s ease-out;
+     ">
+
+    <!-- Header -->
+    <div style="display:flex; align-items:center; gap:12px;">
+        <div style="
+            width:42px;
+            height:42px;
+            border-radius:50%;
+            background:#ef4444;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:20px;
+            font-weight:bold;
+        ">
+            !
+        </div>
+
+        <div>
+            <h3 style="font-size:18px; font-weight:600; color:#f87171;">
+                Intrusion Detected
+            </h3>
+            <p style="font-size:14px; color:#cbd5f5; margin-top:4px;">
+                AI detected suspicious activity.
+            </p>
+        </div>
+    </div>
+
+    <!-- Divider -->
+    <div style="height:1px; background:#1e293b; margin:14px 0;"></div>
+
+    <!-- Actions -->
+    <div style="display:flex; justify-content:flex-end; gap:12px;">
+        <button onclick="closeToast()"
+                style="
+                    padding:8px 16px;
+                    border-radius:10px;
+                    background:#020617;
+                    color:#e5e7eb;
+                    border:1px solid #334155;
+                    cursor:pointer;
+                    transition:all 0.2s;
+                "
+                onmouseover="this.style.background='#020617'; this.style.borderColor='#64748b';"
+                onmouseout="this.style.background='#020617'; this.style.borderColor='#334155';"
+        >
+            Close
+        </button>
+
+        <button onclick="acknowledgeAlert()"
+                style="
+                    padding:8px 18px;
+                    border-radius:10px;
+                    background:#ef4444;
+                    color:white;
+                    border:none;
+                    cursor:pointer;
+                    font-weight:600;
+                    transition:all 0.2s;
+                "
+                onmouseover="this.style.background='#dc2626';"
+                onmouseout="this.style.background='#ef4444';"
+        >
+            OK
+        </button>
+    </div>
+</div>
+
+
+</main>
+
+<!-- Confirmation Modal (hidden by default) -->
+<div id="confirmModal" style="display:none; position:fixed; inset:0; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); z-index:99999;">
+  <div style="background:#0b1220; padding:18px; border-radius:12px; width:420px;">
+    <h3 id="confirmModalTitle" style="color:#f87171; font-size:18px; margin-bottom:8px;">Confirm</h3>
+    <p id="confirmModalBody" style="color:#cbd5f5; margin-bottom:12px;">Are you sure?</p>
+    <div style="display:flex; justify-content:flex-end; gap:8px;">
+      <button id="confirmModalCancel" style="padding:8px 12px; border-radius:8px; background:#0b1220; color:#cbd5f5; border:1px solid #334155;">Cancel</button>
+      <button id="confirmModalConfirm" style="padding:8px 12px; border-radius:8px; background:#ef4444; color:white;">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= JS (REAL-TIME) ================= -->
+<script>
+let pieChart, lineChart, barChart, radarChart;
+
+function updateDashboard() {
+  fetch('/dashboard-data/')
+    .then(res => res.json())
+    .then(data => {
+
+      // Update stats
+      activeAlerts.innerText = data.active_alerts;
+      networkTraffic.innerText = data.traffic_gb + " GB";
+      accuracy.innerText = data.accuracy + "%";
+      uptime.innerText = data.uptime + "%";
+
+      const labels = data.attack_distribution.map(i => i.attack_type);
+      const values = data.attack_distribution.map(i => i.count);
+
+      if (pieChart) pieChart.destroy();
+      pieChart = new Chart(attackPie, { type:'pie', data:{labels,datasets:[{data:values}]} });
+
+      if (barChart) barChart.destroy();
+      barChart = new Chart(attackBar, { type:'bar', data:{labels,datasets:[{data:values}]} });
+
+      if (radarChart) radarChart.destroy();
+      radarChart = new Chart(attackRadar, { type:'radar', data:{labels,datasets:[{data:values}]} });
+
+      const tLabels = data.alerts_over_time.map(i => i.hour);
+      const tValues = data.alerts_over_time.map(i => i.count);
+
+      if (lineChart) lineChart.destroy();
+      lineChart = new Chart(alertsLine, {
+        type:'line',
+        data:{labels:tLabels,datasets:[{data:tValues,label:'Alerts'}]}
       });
 
-      // Alerts Over Time Line Chart
-      const alertsLabels = {{ alerts_over_time|pluck:"day"|safe }};
-      const alertsData = {{ alerts_over_time|pluck:"count"|safe }};
-      new Chart(document.getElementById('alertsLine'), {
-          type: 'line',
-          data: {
-              labels: alertsLabels,
-              datasets: [{
-                  label: 'Alerts',
-                  data: alertsData,
-                  borderColor: '#06b6d4',
-                  backgroundColor: 'rgba(6,182,212,0.2)',
-                  fill: true,
-                  tension: 0.4
-              }]
-          }
-      });
+      // CSRF helper
+      function getCookie(name) {
+        const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+        return v ? v.pop() : '';
+      }
 
-      // Attack Types Bar Chart
-      new Chart(document.getElementById('attackBar'), {
-          type: 'bar',
-          data: {
-              labels: attackLabels,
-              datasets: [{
-                  label: 'Count',
-                  data: attackData,
-                  backgroundColor: '#3b82f6'
-              }]
-          }
-      });
+      // Confirmation modal utilities
+      function showConfirmModal(title, message, dataAttrs) {
+        const modal = document.getElementById('confirmModal');
+        document.getElementById('confirmModalTitle').innerText = title;
+        document.getElementById('confirmModalBody').innerText = message;
+        const btn = document.getElementById('confirmModalConfirm');
+        // attach data attributes
+        btn.dataset.params = JSON.stringify(dataAttrs || {});
+        modal.style.display = 'flex';
+      }
 
-      // Threat Radar Chart
-      new Chart(document.getElementById('attackRadar'), {
-          type: 'radar',
-          data: {
-              labels: attackLabels,
-              datasets: [{
-                  label: 'Threat Level',
-                  data: attackData,
-                  borderColor: '#f59e0b',
-                  backgroundColor: 'rgba(245,158,11,0.2)'
-              }]
+      function hideConfirmModal() {
+        const modal = document.getElementById('confirmModal');
+        modal.style.display = 'none';
+      }
+
+      const blockedSet = new Set((data.blocked_ips || []).map(b => b.ip));
+
+      // Recent alerts panel (show checkbox to block if alert has source)
+      const recentAlertsList = document.getElementById('recentAlertsList');
+      recentAlertsList.innerHTML = '';
+      if (data.recent_alerts && data.recent_alerts.length) {
+        data.recent_alerts.forEach(a => {
+          const li = document.createElement('li');
+          const src = a.source || 'unknown';
+          const text = document.createElement('span');
+          text.innerText = `${a.type || 'Alert'} — ${src} ${a.timestamp? '('+a.timestamp+')':''}`;
+
+          li.appendChild(text);
+
+          if (src !== 'unknown') {
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.style.marginLeft = '12px';
+            cb.checked = blockedSet.has(src);
+            cb.onchange = function() {
+              const checked = cb.checked;
+              const url = checked ? '/block-ip/' : '/unblock-ip/';
+              const reason = a.type || 'detected';
+              // if OS blocking is enabled, require confirmation modal
+              if (data.os_blocking_enabled) {
+                const action = checked ? 'Block' : 'Unblock';
+                showConfirmModal(action + ' IP', `${action} ${src} at OS level? This will modify the host firewall.`, {url, ip: src, checked, reason});
+              } else {
+                const form = new FormData();
+                form.append('ip', src);
+                if (checked) form.append('reason', reason);
+                fetch(url, {method:'POST', body: form, headers: {'X-CSRFToken': getCookie('csrftoken')}})
+                  .then(r => r.json())
+                  .then(j => {
+                    if (!j.ok) { alert('Action failed: ' + (j.error || 'unknown')); cb.checked = !checked; }
+                    else { updateBlockedIPs(src, checked, reason); }
+                  }).catch(e => { alert('Request failed'); cb.checked = !checked; });
+              }
+            };
+            li.appendChild(cb);
           }
-      });
-  </script>
+
+          recentAlertsList.appendChild(li);
+        });
+      } else {
+        recentAlertsList.innerHTML = '<li>No alerts yet</li>';
+      }
+
+      // Blocked IPs panel
+      const blockedIPsList = document.getElementById('blockedIPsList');
+      blockedIPsList.innerHTML = '';
+      if (data.blocked_ips && data.blocked_ips.length) {
+        data.blocked_ips.forEach(b => {
+          const li = document.createElement('li');
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = true;
+          cb.style.marginRight = '8px';
+          cb.onchange = function() {
+            const checked = cb.checked;
+            if (!checked) {
+              // require confirmation if OS blocking enabled
+              if (data.os_blocking_enabled) {
+                showConfirmModal('Unblock IP', `Remove OS-level block for ${b.ip}?`, {url:'/unblock-ip/', ip: b.ip, checked:false});
+              } else {
+                const form = new FormData();
+                form.append('ip', b.ip);
+                fetch('/unblock-ip/', {method:'POST', body: form, headers: {'X-CSRFToken': getCookie('csrftoken')}})
+                  .then(r => r.json()).then(j => {
+                    if (!j.ok) { alert('Unblock failed'); cb.checked = true; }
+                    else { li.remove(); }
+                  }).catch(e => { alert('Request failed'); cb.checked = true; });
+              }
+            }
+          };
+          const span = document.createElement('span');
+          span.innerText = `${b.ip} — ${b.reason || 'n/a'} ${b.created_at? '('+b.created_at+')':''}`;
+          li.appendChild(cb);
+          li.appendChild(span);
+          blockedIPsList.appendChild(li);
+        });
+      } else {
+        blockedIPsList.innerHTML = '<li>No blocked IPs</li>';
+      }
+
+      function updateBlockedIPs(ip, add, reason) {
+        if (add) {
+          // prepend
+          const blockedIPsList = document.getElementById('blockedIPsList');
+          const li = document.createElement('li');
+          const cb = document.createElement('input'); cb.type='checkbox'; cb.checked=true; cb.style.marginRight='8px';
+          cb.onchange = function(){ if(!cb.checked){ const form=new FormData(); form.append('ip', ip); fetch('/unblock-ip/',{method:'POST', body: form, headers:{'X-CSRFToken': getCookie('csrftoken')}}).then(()=>li.remove()).catch(()=>{}); } }
+          const span = document.createElement('span'); span.innerText = `${ip} — ${reason || 'n/a'} (${new Date().toISOString()})`;
+          li.appendChild(cb); li.appendChild(span);
+          blockedIPsList.prepend(li);
+        } else {
+          // remove any matching li
+          const items = Array.from(document.querySelectorAll('#blockedIPsList li'));
+          items.forEach(it => { if (it.innerText.startsWith(ip)) it.remove(); });
+        }
+      }
+
+      // Confirm modal button handlers
+      document.getElementById('confirmModalConfirm').onclick = function() {
+        const btn = document.getElementById('confirmModalConfirm');
+        const params = JSON.parse(btn.dataset.params || '{}');
+        const url = params.url;
+        const ip = params.ip;
+        const checked = params.checked;
+        const reason = params.reason || '';
+        const form = new FormData(); form.append('ip', ip); if (checked) form.append('reason', reason);
+        fetch(url, {method:'POST', body: form, headers: {'X-CSRFToken': getCookie('csrftoken')}})
+          .then(r => r.json()).then(j => {
+            if (!j.ok) { alert('Action failed: ' + (j.error || 'unknown')); }
+            else { updateBlockedIPs(ip, checked, reason); }
+          }).catch(e => { alert('Request failed'); })
+          .finally(() => hideConfirmModal());
+      };
+      document.getElementById('confirmModalCancel').onclick = function() { hideConfirmModal(); };
+    });
+}
+
+// AI detection
+function showToast(){ aiToast.style.display="block"; }
+function closeToast(){ aiToast.style.display="none"; }
+function acknowledgeAlert(){ closeToast(); }
+
+setInterval(() => {
+    fetch('/ai-check/')
+    .then(res => res.json())
+    .then(data => {
+        if (data.prediction === "ATTACK") {
+            showToast();
+        }
+
+        document.getElementById("activeAlerts").innerText = data.alerts;
+        document.getElementById("networkTraffic").innerText = data.traffic + " GB";
+    });
+}, 5000);
+
+updateDashboard();
+setInterval(updateDashboard, 5000);
+
+// WebSocket real-time updates
+(function(){
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(protocol + '://' + window.location.host + '/ws/alerts/');
+  ws.onopen = () => console.log('ws open');
+  ws.onmessage = (evt) => {
+    try {
+      const data = JSON.parse(evt.data);
+      // If new alert, prepend to recent alerts
+      if (data && data.attack_type) {
+        const recentAlertsList = document.getElementById('recentAlertsList');
+        const li = document.createElement('li');
+        const src = data.source || 'unknown';
+        li.innerText = `${data.attack_type} — ${src} (${data.timestamp || new Date().toISOString()})`;
+        // add checkbox for blocking
+        if (src !== 'unknown') {
+          const cb = document.createElement('input'); cb.type='checkbox'; cb.style.marginLeft='12px';
+          cb.onchange = function(){ /* user can use existing UI to block */ };
+          li.appendChild(cb);
+        }
+        recentAlertsList.prepend(li);
+        // also update activeAlerts counter
+        const el = document.getElementById('activeAlerts');
+        if (el) el.innerText = parseInt(el.innerText || '0') + 1;
+      }
+      // If blocked event, update blocked IPs
+      if (data && data.blocked && data.source) {
+        const blockedIPsList = document.getElementById('blockedIPsList');
+        const li = document.createElement('li');
+        const cb = document.createElement('input'); cb.type='checkbox'; cb.checked=true; cb.style.marginRight='8px';
+        const span = document.createElement('span'); span.innerText = `${data.source} — blocked (${new Date().toISOString()})`;
+        li.appendChild(cb); li.appendChild(span);
+        blockedIPsList.prepend(li);
+      }
+    } catch(e) { console.error('ws msg err', e); }
+  };
+  ws.onclose = () => console.log('ws closed');
+})();
+</script>
 
 </body>
 </html>

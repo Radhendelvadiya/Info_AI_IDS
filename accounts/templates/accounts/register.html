@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Register | Info IDS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Font -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg-main: #0b1324;
+        --bg-card: rgba(22, 34, 58, 0.88);
+        --accent: #19d4ff;
+        --accent-soft: rgba(25, 212, 255, 0.2);
+        --text-main: #e6f1ff;
+        --text-muted: #9fb3c8;
+        --danger: #ff4d4d;
+      }
+
+      * {
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        height: 100vh;
+        background: radial-gradient(circle at top, #122042, #060b1a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-main);
+        overflow: hidden;
+      }
+
+      /* ===== NETWORK CANVAS ===== */
+      canvas {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+      }
+
+      /* ===== CARD ===== */
+      .register-card {
+        width: 420px;
+        max-height: 85vh;
+        padding: 36px;
+        background: var(--bg-card);
+        border-radius: 16px;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(12px);
+        z-index: 1;
+        overflow-y: auto;
+        animation: fadeIn 0.8s ease;
+      }
+
+      .register-card::-webkit-scrollbar {
+        width: 4px;
+      }
+      .register-card::-webkit-scrollbar-thumb {
+        background: var(--accent);
+        border-radius: 10px;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .title {
+        text-align: center;
+        font-size: 26px;
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 6px;
+      }
+
+      .subtitle {
+        text-align: center;
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 26px;
+      }
+
+      /* ===== FORM ===== */
+      form p {
+        margin-bottom: 16px;
+      }
+
+      label {
+        font-size: 13px;
+        color: var(--text-muted);
+        display: block;
+        margin-bottom: 6px;
+      }
+
+    .login-title {
+        text-align: center;
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        color: var(--accent);
+      }
+
+    .login-subtitle {
+        text-align: center;
+        font-size: 13px;
+        letter-spacing: 0.6px;
+        color: var(--text-muted);
+        margin: 6px 0 32px;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px 14px;
+        background: #0f1b33;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        color: var(--text-main);
+        font-size: 14px;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+
+      .helptext {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 6px;
+        display: block;
+      }
+
+      .security-note {
+        background: rgba(25, 212, 255, 0.08);
+        border-left: 3px solid var(--accent);
+        padding: 12px 14px;
+        margin-top: 10px;
+        font-size: 12.5px;
+        color: var(--text-main);
+        border-radius: 8px;
+      }
+
+      .security-note ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+
+      .security-note li {
+        margin-bottom: 6px;
+      }
+
+      .errorlist {
+        list-style: none;
+        padding: 0;
+        font-size: 12px;
+        color: var(--danger);
+      }
+
+      /* ===== BUTTON ===== */
+      .btn {
+        width: 100%;
+        padding: 13px;
+        margin-top: 14px;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #19d4ff, #0bbcd6);
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn:hover {
+        box-shadow: 0 8px 25px rgba(25, 212, 255, 0.35);
+        transform: translateY(-2px);
+      }
+
+      .login-link {
+        margin-top: 22px;
+        text-align: center;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .login-link a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="network"></canvas>
+
+    <div class="register-card">
+      <div class="login-title">Info IDS</div>
+      <div class="login-subtitle">
+        Secure Registration · AI Intrusion Detection System
+      </div>
+
+      <form method="post">
+        {% csrf_token %} {{ form.as_p }}
+        <div class="security-note">
+          <strong>Password Security Requirements</strong>
+          <ul>
+            <li>Must not be derived from personal information</li>
+            <li>Minimum length of 8 characters</li>
+            <li>Avoid common or predictable passwords</li>
+            <li>Must include non-numeric characters</li>
+          </ul>
+        </div>
+        <button class="btn" type="submit">Create Account</button>
+      </form>
+
+      <div class="login-link">
+        Already registered?
+        <a href="{% url 'login' %}">Login</a>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("network");
+      const ctx = canvas.getContext("2d");
+      let w,
+        h,
+        points = [];
+
+      function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+        points = Array.from({ length: 60 }, () => ({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.4,
+        }));
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        points.forEach((p) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > w) p.vx *= -1;
+          if (p.y < 0 || p.y > h) p.vy *= -1;
+        });
+
+        for (let i = 0; i < points.length; i++) {
+          for (let j = i; j < points.length; j++) {
+            const dx = points[i].x - points[j].x;
+            const dy = points[i].y - points[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 120) {
+              ctx.strokeStyle = `rgba(25,212,255,${1 - dist / 120})`;
+              ctx.beginPath();
+              ctx.moveTo(points[i].x, points[i].y);
+              ctx.lineTo(points[j].x, points[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+        requestAnimationFrame(draw);
+      }
+
+      resize();
+      draw();
+      window.addEventListener("resize", resize);
+    </script>
+  </body>
+</html>
