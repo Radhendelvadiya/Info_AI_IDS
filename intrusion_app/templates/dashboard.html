@@ -34,10 +34,12 @@
     <h1 class="text-2xl font-bold text-cyan-400 mb-6">Info IDS</h1>
 
     <nav class="space-y-4">
-      <a class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">Dashboard</a>
-      <a class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">Upload Data</a>
-      <a class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">Reports</a>
-      <a class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">Settings</a>
+      <a href="/" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20 bg-cyan-500/20">📊 Dashboard</a>
+      <a href="/#" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">📤 Upload Data</a>
+      <a href="/#" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">📋 Reports</a>
+      {% if user_role == 'ADMIN' or user_role == 'ANALYST' %}
+      <a href="/settings/" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20 transition-all duration-200">⚙️ Settings</a>
+      {% endif %}
     </nav>
   </div>
 
@@ -147,6 +149,33 @@
   </div>
 </section>
 
+<!-- ================= AI/ML ATTACK DETECTION ================= -->
+<section class="bg-slate-800 p-6 rounded-2xl">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-cyan-400 text-lg font-bold">AI/ML Attack Detection</h3>
+    <span id="detectionCountBadge" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold">0</span>
+  </div>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+    <div class="bg-slate-700 p-4 rounded-lg">
+      <div class="text-gray-400 text-sm">Total Attacks (24h)</div>
+      <div id="totalAttacks24h" class="text-2xl font-bold text-yellow-400">0</div>
+    </div>
+    <div class="bg-slate-700 p-4 rounded-lg">
+      <div class="text-gray-400 text-sm">Avg AI Confidence</div>
+      <div id="avgConfidence" class="text-2xl font-bold text-blue-400">0%</div>
+    </div>
+    <div class="bg-slate-700 p-4 rounded-lg">
+      <div class="text-gray-400 text-sm">Critical Threats</div>
+      <div id="criticalThreats" class="text-2xl font-bold text-red-400">0</div>
+    </div>
+  </div>
+  
+  <div id="attackDetectionList" class="space-y-2 max-h-96 overflow-y-auto">
+    <div class="text-gray-400 text-center py-8">No attacks detected yet</div>
+  </div>
+</section>
+
 <!-- ================= RECENT ALERTS & BLOCKED IPS ================= -->
 <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
   <div class="bg-slate-800 p-6 rounded-2xl">
@@ -157,10 +186,13 @@
   </div>
 
   <div class="bg-slate-800 p-6 rounded-2xl">
-    <h3 class="text-cyan-400 mb-4">Blocked IPs</h3>
-    <ul id="blockedIPsList" class="space-y-2 text-sm text-gray-300 max-h-60 overflow-auto">
-      <li>No blocked IPs</li>
-    </ul>
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-cyan-400">Blocked IPs</h3>
+      <span id="blockedCountBadge" class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">0</span>
+    </div>
+    <div id="blockedIPsContainer" class="space-y-3 max-h-80 overflow-y-auto">
+      <div class="text-gray-400 text-center py-8">No blocked IPs</div>
+    </div>
   </div>
 </section>
 
@@ -266,6 +298,8 @@
 
 <!-- ================= JS (REAL-TIME) ================= -->
 <script>
+// Get user permissions from Django context
+const canModifyIPs = {{ can_modify_ips|lower }};
 let pieChart, lineChart, barChart, radarChart;
 
 function updateDashboard() {
@@ -324,7 +358,7 @@ function updateDashboard() {
 
       const blockedSet = new Set((data.blocked_ips || []).map(b => b.ip));
 
-      // Recent alerts panel (show checkbox to block if alert has source)
+      // Recent alerts panel (show checkbox to block if alert has source and user is authorized)
       const recentAlertsList = document.getElementById('recentAlertsList');
       recentAlertsList.innerHTML = '';
       if (data.recent_alerts && data.recent_alerts.length) {
@@ -336,7 +370,8 @@ function updateDashboard() {
 
           li.appendChild(text);
 
-          if (src !== 'unknown') {
+          // Only show block checkbox if user can modify IPs
+          if (src !== 'unknown' && canModifyIPs) {
             const cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.style.marginLeft = '12px';
@@ -370,58 +405,246 @@ function updateDashboard() {
         recentAlertsList.innerHTML = '<li>No alerts yet</li>';
       }
 
-      // Blocked IPs panel
-      const blockedIPsList = document.getElementById('blockedIPsList');
-      blockedIPsList.innerHTML = '';
+      // Blocked IPs panel - with action buttons for admin/analyst
+      const blockedIPsContainer = document.getElementById('blockedIPsContainer');
+      blockedIPsContainer.innerHTML = '';
+      
       if (data.blocked_ips && data.blocked_ips.length) {
+        document.getElementById('blockedCountBadge').innerText = data.blocked_ips.length;
+        
         data.blocked_ips.forEach(b => {
-          const li = document.createElement('li');
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.checked = true;
-          cb.style.marginRight = '8px';
-          cb.onchange = function() {
-            const checked = cb.checked;
-            if (!checked) {
-              // require confirmation if OS blocking enabled
+          const itemDiv = document.createElement('div');
+          itemDiv.style.cssText = 'background:rgba(30,41,59,0.6); padding:12px; border-radius:10px; border-left:3px solid #ef4444; display:flex; justify-content:space-between; align-items:center;';
+          
+          // IP Info Section
+          const infoDiv = document.createElement('div');
+          infoDiv.style.cssText = 'flex:1; min-width:0;';
+          
+          const ipSpan = document.createElement('div');
+          ipSpan.style.cssText = 'font-weight:bold; color:#fbbf24; word-break:break-all;';
+          ipSpan.innerText = b.ip;
+          infoDiv.appendChild(ipSpan);
+          
+          const reasonSpan = document.createElement('div');
+          reasonSpan.style.cssText = 'font-size:12px; color:#9ca3af; margin-top:4px;';
+          reasonSpan.innerText = `Reason: ${b.reason || 'manual'} — ${b.created_at? new Date(b.created_at).toLocaleDateString() : 'unknown'}`;
+          infoDiv.appendChild(reasonSpan);
+          
+          itemDiv.appendChild(infoDiv);
+          
+          // Action Buttons (only for admin/analyst)
+          if (canModifyIPs) {
+            const actionDiv = document.createElement('div');
+            actionDiv.style.cssText = 'display:flex; gap:6px; margin-left:12px;';
+            
+            // Unblock Button
+            const unblockBtn = document.createElement('button');
+            unblockBtn.innerText = 'Unblock';
+            unblockBtn.style.cssText = 'background:#10b981; color:white; padding:6px 12px; border-radius:6px; border:none; cursor:pointer; font-size:12px; font-weight:bold; transition:background 0.2s;';
+            unblockBtn.onmouseover = () => unblockBtn.style.background = '#059669';
+            unblockBtn.onmouseout = () => unblockBtn.style.background = '#10b981';
+            unblockBtn.onclick = () => {
               if (data.os_blocking_enabled) {
                 showConfirmModal('Unblock IP', `Remove OS-level block for ${b.ip}?`, {url:'/unblock-ip/', ip: b.ip, checked:false});
               } else {
                 const form = new FormData();
                 form.append('ip', b.ip);
                 fetch('/unblock-ip/', {method:'POST', body: form, headers: {'X-CSRFToken': getCookie('csrftoken')}})
-                  .then(r => r.json()).then(j => {
-                    if (!j.ok) { alert('Unblock failed'); cb.checked = true; }
-                    else { li.remove(); }
-                  }).catch(e => { alert('Request failed'); cb.checked = true; });
+                  .then(r => r.json())
+                  .then(j => {
+                    if (j.ok) { 
+                      itemDiv.style.opacity = '0.5';
+                      setTimeout(() => itemDiv.remove(), 300);
+                      updateBlockedIPCount();
+                    } else { 
+                      alert('Unblock failed: ' + (j.error || 'unknown')); 
+                    }
+                  })
+                  .catch(e => { alert('Request failed'); });
               }
-            }
-          };
-          const span = document.createElement('span');
-          span.innerText = `${b.ip} — ${b.reason || 'n/a'} ${b.created_at? '('+b.created_at+')':''}`;
-          li.appendChild(cb);
-          li.appendChild(span);
-          blockedIPsList.appendChild(li);
+            };
+            actionDiv.appendChild(unblockBtn);
+            
+            // Close Button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerText = '✕';
+            closeBtn.style.cssText = 'background:#6b7280; color:white; padding:6px 10px; border-radius:6px; border:none; cursor:pointer; font-size:14px; font-weight:bold; transition:background 0.2s;';
+            closeBtn.onmouseover = () => closeBtn.style.background = '#4b5563';
+            closeBtn.onmouseout = () => closeBtn.style.background = '#6b7280';
+            closeBtn.onclick = () => {
+              const form = new FormData();
+              form.append('ip', b.ip);
+              fetch('/unblock-ip/', {method:'POST', body: form, headers: {'X-CSRFToken': getCookie('csrftoken')}})
+                .then(r => r.json())
+                .then(j => {
+                  if (j.ok) {
+                    itemDiv.style.transform = 'slideOut';
+                    itemDiv.style.opacity = '0';
+                    setTimeout(() => itemDiv.remove(), 200);
+                    updateBlockedIPCount();
+                  }
+                })
+                .catch();
+            };
+            actionDiv.appendChild(closeBtn);
+            
+            itemDiv.appendChild(actionDiv);
+          }
+          
+          blockedIPsContainer.appendChild(itemDiv);
         });
       } else {
-        blockedIPsList.innerHTML = '<li>No blocked IPs</li>';
+        document.getElementById('blockedCountBadge').innerText = '0';
+        blockedIPsContainer.innerHTML = '<div class="text-gray-400 text-center py-8">No blocked IPs</div>';
+      }
+      
+      function updateBlockedIPCount() {
+        const count = blockedIPsContainer.querySelectorAll('[style*="background:rgba"]').length;
+        document.getElementById('blockedCountBadge').innerText = count;
+        if (count === 0) {
+          blockedIPsContainer.innerHTML = '<div class="text-gray-400 text-center py-8">No blocked IPs</div>';
+        }
       }
 
       function updateBlockedIPs(ip, add, reason) {
+        const blockedIPsContainer = document.getElementById('blockedIPsContainer');
+        const countBadge = document.getElementById('blockedCountBadge');
+        
         if (add) {
-          // prepend
-          const blockedIPsList = document.getElementById('blockedIPsList');
-          const li = document.createElement('li');
-          const cb = document.createElement('input'); cb.type='checkbox'; cb.checked=true; cb.style.marginRight='8px';
-          cb.onchange = function(){ if(!cb.checked){ const form=new FormData(); form.append('ip', ip); fetch('/unblock-ip/',{method:'POST', body: form, headers:{'X-CSRFToken': getCookie('csrftoken')}}).then(()=>li.remove()).catch(()=>{}); } }
-          const span = document.createElement('span'); span.innerText = `${ip} — ${reason || 'n/a'} (${new Date().toISOString()})`;
-          li.appendChild(cb); li.appendChild(span);
-          blockedIPsList.prepend(li);
+          // Add new blocked IP to the top
+          const itemDiv = document.createElement('div');
+          itemDiv.style.cssText = 'background:rgba(30,41,59,0.6); padding:12px; border-radius:10px; border-left:3px solid #ef4444; display:flex; justify-content:space-between; align-items:center;';
+          
+          const infoDiv = document.createElement('div');
+          infoDiv.style.cssText = 'flex:1; min-width:0;';
+          
+          const ipSpan = document.createElement('div');
+          ipSpan.style.cssText = 'font-weight:bold; color:#fbbf24; word-break:break-all;';
+          ipSpan.innerText = ip;
+          infoDiv.appendChild(ipSpan);
+          
+          const reasonSpan = document.createElement('div');
+          reasonSpan.style.cssText = 'font-size:12px; color:#9ca3af; margin-top:4px;';
+          reasonSpan.innerText = `Reason: ${reason || 'detected'} — ${new Date().toLocaleDateString()}`;
+          infoDiv.appendChild(reasonSpan);
+          
+          itemDiv.appendChild(infoDiv);
+          
+          if (canModifyIPs) {
+            const actionDiv = document.createElement('div');
+            actionDiv.style.cssText = 'display:flex; gap:6px; margin-left:12px;';
+            
+            const unblockBtn = document.createElement('button');
+            unblockBtn.innerText = 'Unblock';
+            unblockBtn.style.cssText = 'background:#10b981; color:white; padding:6px 12px; border-radius:6px; border:none; cursor:pointer; font-size:12px; font-weight:bold;';
+            unblockBtn.onclick = () => {
+              const form = new FormData();
+              form.append('ip', ip);
+              fetch('/unblock-ip/', {method:'POST', body: form, headers: {'X-CSRFToken': getCookie('csrftoken')}})
+                .then(r => r.json())
+                .then(j => { if (j.ok) { itemDiv.remove(); updateBlockedIPCount(); } })
+                .catch();
+            };
+            actionDiv.appendChild(unblockBtn);
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.innerText = '✕';
+            closeBtn.style.cssText = 'background:#6b7280; color:white; padding:6px 10px; border-radius:6px; border:none; cursor:pointer;';
+            closeBtn.onclick = () => {
+              const form = new FormData();
+              form.append('ip', ip);
+              fetch('/unblock-ip/', {method:'POST', body: form, headers: {'X-CSRFToken': getCookie('csrftoken')}})
+                .then(r => r.json())
+                .then(j => { if (j.ok) { itemDiv.remove(); updateBlockedIPCount(); } })
+                .catch();
+            };
+            actionDiv.appendChild(closeBtn);
+            itemDiv.appendChild(actionDiv);
+          }
+          
+          blockedIPsContainer.prepend(itemDiv);
+          if (blockedIPsContainer.querySelector('.text-gray-400')) {
+            blockedIPsContainer.querySelector('.text-gray-400').remove();
+          }
+          updateBlockedIPCount();
         } else {
-          // remove any matching li
-          const items = Array.from(document.querySelectorAll('#blockedIPsList li'));
-          items.forEach(it => { if (it.innerText.startsWith(ip)) it.remove(); });
+          // Remove IP from list
+          const items = Array.from(blockedIPsContainer.querySelectorAll('div'));
+          items.forEach(item => {
+            const ipDiv = item.querySelector('[style*="color:#fbbf24"]');
+            if (ipDiv && ipDiv.innerText === ip) {
+              item.remove();
+            }
+          });
+          updateBlockedIPCount();
         }
+      }
+
+      // Render AI/ML Attack Detections
+      const attackDetectionList = document.getElementById('attackDetectionList');
+      attackDetectionList.innerHTML = '';
+      
+      if (data.attack_detections && data.attack_detections.length) {
+        document.getElementById('detectionCountBadge').innerText = data.attack_detections.length;
+        
+        // Calculate statistics
+        let totalAttacks = data.attack_detections.length;
+        let criticalCount = 0;
+        let totalConfidence = 0;
+        
+        data.attack_detections.forEach(attack => {
+          if (attack.severity === 'CRITICAL') criticalCount++;
+          totalConfidence += attack.confidence_score;
+          
+          const attackDiv = document.createElement('div');
+          attackDiv.style.cssText = 'background:rgba(30,41,59,0.8); padding:12px; border-radius:8px; border-left:4px solid; margin-bottom:8px;';
+          
+          // Determine color based on severity
+          const severityColors = {
+            'CRITICAL': '#ef4444',
+            'HIGH': '#f97316',
+            'MEDIUM': '#eab308',
+            'LOW': '#3b82f6'
+          };
+          attackDiv.style.borderColor = severityColors[attack.severity] || '#3b82f6';
+          
+          // Build attack info
+          const infoHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+              <div style="flex:1;">
+                <div style="font-weight:bold; color:${severityColors[attack.severity]}; margin-bottom:4px;">
+                  ${attack.attack_type} - ${attack.severity}
+                </div>
+                <div style="font-size:12px; color:#9ca3af; margin-bottom:4px;">
+                  Source: <span style="color:#fbbf24; font-weight:bold;">${attack.source_ip || 'N/A'}</span>
+                  ${attack.port ? '| Port: ' + attack.port : ''}
+                </div>
+                <div style="font-size:11px; color:#6b7280;">
+                  Model: ${attack.ai_model || 'Unknown'} | Time: ${new Date(attack.detected_at).toLocaleTimeString()}
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="background:#1e293b; padding:6px 10px; border-radius:6px; color:#60a5fa; font-weight:bold; font-size:12px;">
+                  ${(attack.confidence_score * 100).toFixed(1)}% Confidence
+                </div>
+              </div>
+            </div>
+          `;
+          
+          attackDiv.innerHTML = infoHTML;
+          attackDetectionList.appendChild(attackDiv);
+        });
+        
+        // Update statistics
+        document.getElementById('totalAttacks24h').innerText = totalAttacks;
+        document.getElementById('avgConfidence').innerText = ((totalConfidence / totalAttacks) * 100).toFixed(1) + '%';
+        document.getElementById('criticalThreats').innerText = criticalCount;
+      } else {
+        document.getElementById('detectionCountBadge').innerText = '0';
+        document.getElementById('totalAttacks24h').innerText = '0';
+        document.getElementById('avgConfidence').innerText = '0%';
+        document.getElementById('criticalThreats').innerText = '0';
+        attackDetectionList.innerHTML = '<div class="text-gray-400 text-center py-8">No attacks detected yet</div>';
       }
 
       // Confirm modal button handlers

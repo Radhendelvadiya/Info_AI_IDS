@@ -1,0 +1,342 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings | Info IDS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-slide { animation: slideIn 0.3s ease-out; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800 text-white min-h-screen">
+
+<!-- Navigation -->
+<nav class="bg-slate-900 border-b border-gray-700 p-4">
+  <div class="max-w-7xl mx-auto flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-cyan-400">Info IDS - Settings</h1>
+    <a href="/" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition">Back to Dashboard</a>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto p-6 space-y-6">
+
+  <!-- User Role Info -->
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700">
+    <h2 class="text-xl font-bold text-cyan-400 mb-4">Account Information</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="text-gray-400 text-sm">Username</label>
+        <p class="text-lg font-bold">{{ user.username }}</p>
+      </div>
+      <div>
+        <label class="text-gray-400 text-sm">Role</label>
+        <p class="text-lg font-bold">
+          <span class="px-3 py-1 rounded-full text-xs font-bold
+            {% if user_role == 'ADMIN' %} bg-red-600 text-white
+            {% elif user_role == 'ANALYST' %} bg-yellow-600 text-white
+            {% else %} bg-blue-600 text-white {% endif %}">
+            {{ user_role }}
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ML Model Management -->
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700">
+    <h2 class="text-xl font-bold text-cyan-400 mb-4">ML Model Management</h2>
+    
+    <!-- Current Model Status -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-slate-700 p-4 rounded-lg">
+        <label class="text-gray-400 text-sm">Model Status</label>
+        <p id="modelStatus" class="text-lg font-bold text-yellow-400">Loading...</p>
+      </div>
+      <div class="bg-slate-700 p-4 rounded-lg">
+        <label class="text-gray-400 text-sm">Current Accuracy</label>
+        <p id="modelAccuracy" class="text-lg font-bold text-blue-400">0%</p>
+      </div>
+      <div class="bg-slate-700 p-4 rounded-lg">
+        <label class="text-gray-400 text-sm">Last Trained</label>
+        <p id="modelDate" class="text-sm font-mono">Never</p>
+      </div>
+    </div>
+
+    <!-- Train Model Button -->
+    {% if can_train_models %}
+    <button id="trainModelBtn" onclick="trainModel()" 
+            class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-3 px-6 rounded-lg transition">
+      Train/Retrain ML Model
+    </button>
+    <p class="text-gray-400 text-sm mt-2">Training uses recent attack detection data to improve accuracy</p>
+    {% else %}
+    <div class="bg-red-900 border border-red-700 p-4 rounded-lg">
+      <p class="text-red-200">Only Admins can train models</p>
+    </div>
+    {% endif %}
+
+    <!-- Training Progress -->
+    <div id="trainingProgress" class="mt-4" style="display:none;">
+      <div class="flex items-center gap-3">
+        <div class="animate-spin h-5 w-5 border-2 border-cyan-400 border-t-transparent rounded-full"></div>
+        <span id="trainingStatus" class="text-cyan-400">Training model...</span>
+      </div>
+      <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+        <div id="trainingBar" class="bg-cyan-500 h-2 rounded-full" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dataset Management -->
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700">
+    <h2 class="text-xl font-bold text-cyan-400 mb-4">Dataset Management</h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div class="bg-slate-700 p-4 rounded-lg">
+        <label class="text-gray-400 text-sm">Attack Records</label>
+        <p id="attackRecordCount" class="text-2xl font-bold text-red-400">0</p>
+      </div>
+      <div class="bg-slate-700 p-4 rounded-lg">
+        <label class="text-gray-400 text-sm">Blocked IPs</label>
+        <p id="blockedIPCount" class="text-2xl font-bold text-yellow-400">0</p>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      <button onclick="exportData()" 
+              class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">
+        Export Attack Data
+      </button>
+      <a href="https://www.kaggle.com/datasets" target="_blank"
+         class="block text-center bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition">
+        Download NSL-KDD Dataset (External)
+      </a>
+    </div>
+  </div>
+
+  <!-- Security Settings -->
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700">
+    <h2 class="text-xl font-bold text-cyan-400 mb-4">Security Settings</h2>
+    
+    <div class="space-y-4">
+      <label class="flex items-center cursor-pointer">
+        <input type="checkbox" id="osBlockingToggle" onchange="toggleOSBlocking()" class="w-4 h-4 rounded">
+        <span class="ml-3 text-gray-300">Enable OS-Level IP Blocking (Windows/Linux Firewall)</span>
+      </label>
+      <p class="text-gray-400 text-sm ml-7">When enabled, blocked IPs are added to system firewall rules</p>
+
+      <label class="flex items-center cursor-pointer mt-4">
+        <input type="checkbox" id="autoBlockToggle" onchange="toggleAutoBlocking()" class="w-4 h-4 rounded">
+        <span class="ml-3 text-gray-300">Auto-Block Critical Threats</span>
+      </label>
+      <p class="text-gray-400 text-sm ml-7">Automatically block IPs with CRITICAL severity attacks</p>
+    </div>
+  </div>
+
+  <!-- Detection Settings -->
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700">
+    <h2 class="text-xl font-bold text-cyan-400 mb-4">Detection Settings</h2>
+    
+    <div class="space-y-4">
+      <div>
+        <label class="text-gray-300 text-sm">AI Confidence Threshold (%)</label>
+        <input type="range" id="confidenceThreshold" min="0" max="100" value="70" 
+               class="w-full mt-2" oninput="updateThreshold(this.value)">
+        <p class="text-gray-400 text-xs mt-1">Only flag attacks with confidence above <span id="thresholdValue">70</span>%</p>
+      </div>
+      
+      <div>
+        <label class="text-gray-300 text-sm">Alert Severity Level</label>
+        <select id="severityFilter" onchange="updateSeverity()" class="w-full mt-2 bg-slate-700 p-2 rounded">
+          <option value="LOW">Show All (Low and above)</option>
+          <option value="MEDIUM" selected>Medium and above</option>
+          <option value="HIGH">High and above</option>
+          <option value="CRITICAL">Only Critical</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Information -->
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700">
+    <h2 class="text-xl font-bold text-cyan-400 mb-4">System Information</h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <div>
+        <label class="text-gray-400">System Version</label>
+        <p class="font-mono">v1.0.0 - AI IDS</p>
+      </div>
+      <div>
+        <label class="text-gray-400">Python Environment</label>
+        <p class="font-mono">3.12.2</p>
+      </div>
+      <div>
+        <label class="text-gray-400">Django Version</label>
+        <p class="font-mono">5.2.6</p>
+      </div>
+      <div>
+        <label class="text-gray-400">ML Framework</label>
+        <p class="font-mono">Scikit-Learn 1.7.2</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// Load model status on page load
+window.addEventListener('load', () => {
+  loadModelStatus();
+  loadDatasetStats();
+});
+
+function loadModelStatus() {
+  fetch('/model-status/')
+    .then(r => r.json())
+    .then(data => {
+      const status = data.has_model ? 'Trained' : 'Not Trained';
+      const statusColor = data.has_model ? 'text-green-400' : 'text-yellow-400';
+      
+      document.getElementById('modelStatus').innerHTML = 
+        `<span class="${statusColor}">${status}</span>`;
+      document.getElementById('modelAccuracy').innerText = data.accuracy + '%';
+      
+      if (data.trained_at) {
+        const date = new Date(data.trained_at);
+        const hours_ago = Math.floor(data.model_age_hours);
+        document.getElementById('modelDate').innerText = 
+          `${date.toLocaleDateString()} (${hours_ago}h ago)`;
+      }
+    });
+}
+
+function loadDatasetStats() {
+  fetch('/attack-statistics/')
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('attackRecordCount').innerText = data.total_attacks_24h;
+    });
+  
+  fetch('/dashboard-data/')
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('blockedIPCount').innerText = data.blocked_ips.length;
+    });
+}
+
+function trainModel() {
+  const btn = document.getElementById('trainModelBtn');
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  
+  document.getElementById('trainingProgress').style.display = 'block';
+  
+  // Simulate training progress
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 30;
+    if (progress > 100) progress = 100;
+    document.getElementById('trainingBar').style.width = progress + '%';
+  }, 500);
+
+  fetch('/train-model/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({ model_type: 'random_forest' })
+  })
+  .then(r => r.json())
+  .then(data => {
+    clearInterval(interval);
+    document.getElementById('trainingBar').style.width = '100%';
+    document.getElementById('trainingStatus').innerHTML = 
+      `<span class="text-green-400">Training Complete! Accuracy: ${data.accuracy}%</span>`;
+    
+    setTimeout(() => {
+      document.getElementById('trainingProgress').style.display = 'none';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      loadModelStatus();
+      alert(`Model trained successfully!\nAccuracy: ${data.accuracy}%\nSamples used: ${data.samples_used}`);
+    }, 2000);
+  })
+  .catch(e => {
+    clearInterval(interval);
+    alert('Error training model: ' + e);
+    document.getElementById('trainingProgress').style.display = 'none';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  });
+}
+
+function getCookie(name) {
+  const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+
+function updateThreshold(value) {
+  document.getElementById('thresholdValue').innerText = value;
+  localStorage.setItem('confidenceThreshold', value);
+}
+
+function updateSeverity() {
+  const severity = document.getElementById('severityFilter').value;
+  localStorage.setItem('severityFilter', severity);
+}
+
+function toggleOSBlocking() {
+  const enabled = document.getElementById('osBlockingToggle').checked;
+  localStorage.setItem('osBlockingEnabled', enabled);
+  alert('OS-level blocking: ' + (enabled ? 'ENABLED' : 'DISABLED'));
+}
+
+function toggleAutoBlocking() {
+  const enabled = document.getElementById('autoBlockToggle').checked;
+  localStorage.setItem('autoBlockingEnabled', enabled);
+  alert('Auto-blocking: ' + (enabled ? 'ENABLED' : 'DISABLED'));
+}
+
+function exportData() {
+  fetch('/attack-statistics/')
+    .then(r => r.json())
+    .then(data => {
+      const csv = convertToCSV(data.recent_attacks);
+      downloadCSV(csv, 'attack_data.csv');
+    });
+}
+
+function convertToCSV(data) {
+  const headers = ['Attack Type', 'Source IP', 'Severity', 'Confidence', 'Model', 'Time'];
+  const rows = data.map(a => [
+    a.attack_type,
+    a.source_ip,
+    a.severity,
+    (a.confidence_score * 100).toFixed(1),
+    a.ai_model,
+    new Date(a.detected_at).toLocaleString()
+  ]);
+  
+  return [
+    headers.join(','),
+    ...rows.map(r => r.map(c => `"${c}"`).join(','))
+  ].join('\n');
+}
+
+function downloadCSV(csv, filename) {
+  const link = document.createElement('a');
+  link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  link.download = filename;
+  link.click();
+}
+</script>
+
+</body>
+</html>
