@@ -34,9 +34,9 @@
     <h1 class="text-2xl font-bold text-cyan-400 mb-6">Info IDS</h1>
 
     <nav class="space-y-4">
-      <a href="/" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20 bg-cyan-500/20">📊 Dashboard</a>
-      <a href="/#" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">📤 Upload Data</a>
-      <a href="/#" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">📋 Reports</a>
+      <a href="/" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20 bg-cyan-500/20">Dashboard</a>
+      <a href="/#" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">Upload Data</a>
+      <a href="/#" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">Reports</a>
       {% if user_role == 'ADMIN' or user_role == 'ANALYST' %}
       <a href="/settings/" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20 transition-all duration-200">⚙️ Settings</a>
       {% endif %}
