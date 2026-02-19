@@ -525,32 +525,21 @@ def add_user(request):
             username = f"{username_base}_{counter}"
             counter += 1
         
-        # If admin provided a password, use it (and validate confirmation).
-        # Otherwise generate a secure random password as fallback.
+        # Create user with a secure random password. Some custom managers may not
+        # implement `make_random_password`, so use it if available or fall back
+        # to the `secrets` module.
         import secrets
-        provided_pw = request.POST.get('password', '').strip()
-        provided_pw2 = request.POST.get('password2', '').strip()
-
-        if provided_pw:
-            # If password provided, ensure confirmation matches
-            if provided_pw != provided_pw2:
-                return JsonResponse({
-                    'ok': False,
-                    'error': 'Passwords do not match'
-                }, status=400)
-            final_password = provided_pw
+        make_pw = getattr(User.objects, 'make_random_password', None)
+        if callable(make_pw):
+            random_password = make_pw()
         else:
-            make_pw = getattr(User.objects, 'make_random_password', None)
-            if callable(make_pw):
-                final_password = make_pw()
-            else:
-                final_password = secrets.token_urlsafe(12)
+            random_password = secrets.token_urlsafe(12)
 
         # Create user
         new_user = User.objects.create_user(
             username=username,
             email=email,
-            password=final_password
+            password=random_password
         )
         
         # Create or update user profile with role
@@ -565,11 +554,7 @@ def add_user(request):
         return JsonResponse({
             'ok': True,
             'message': f'User {email} created with role {role}',
-            'user_id': new_user.id,
-            # Return the generated password when admin didn't provide one so the
-            # caller can display/copy it. If admin provided a password, return
-            # masked value for safety.
-            'password': (final_password if not provided_pw else 'SET_BY_ADMIN')
+            'user_id': new_user.id
         })
     except UserProfile.DoesNotExist:
         return JsonResponse({
@@ -631,15 +616,12 @@ def manage_user(request):
         target_profile.role = new_role
         target_profile.save()
 
-        # Optional: update password if provided (admin can reset password)
-        new_password = request.POST.get('password', '').strip()
-        new_password2 = request.POST.get('password2', '').strip()
+        # Optionally update password if provided
+        new_password = request.POST.get('password', '')
         if new_password:
-            if new_password != new_password2:
-                return JsonResponse({'ok': False, 'error': 'Passwords do not match'}, status=400)
             target_user.set_password(new_password)
             target_user.save()
-
+        
         return JsonResponse({
             'ok': True,
             'message': f'User role updated to {new_role}'
