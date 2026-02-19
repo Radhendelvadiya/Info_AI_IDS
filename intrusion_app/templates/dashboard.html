@@ -10,6 +10,9 @@
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <!-- Chart.js CDN (NO LOCAL FILE NEEDED) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -19,6 +22,8 @@
     from { transform: translateX(120%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
+.card-hover { transition: all 0.3s ease; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(6, 182, 212, 0.2); }
 </style>
 
 <body class="bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800 text-white min-h-screen flex">
@@ -34,17 +39,18 @@
     <h1 class="text-2xl font-bold text-cyan-400 mb-6">Info IDS</h1>
 
     <nav class="space-y-4">
-      <a href="/" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20 bg-cyan-500/20">Dashboard</a>
-      <a href="/#" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">Upload Data</a>
-      <a href="/#" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20">Reports</a>
+      <a href="/" class="block px-4 py-3 rounded-xl bg-cyan-500/20 border-l-4 border-cyan-400 transition-all duration-200">Dashboard</a>
+      <a href="/#" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20 transition-all duration-200">Upload Data</a>
+      <a href="/#" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20 transition-all duration-200">Reports</a>
       {% if user_role == 'ADMIN' or user_role == 'ANALYST' %}
-      <a href="/settings/" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20 transition-all duration-200">⚙️ Settings</a>
+      <a href="/user-management/" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20 transition-all duration-200">User Management</a>
+      <a href="/settings/" class="block px-4 py-3 rounded-xl hover:bg-cyan-500/20 transition-all duration-200">Settings</a>
       {% endif %}
     </nav>
   </div>
 
   <!-- BOTTOM USER PROFILE -->
-  <div class="border-t border-gray-700 pt-4 mt-4 bg-slate-900">
+  <div class="border-t border-gray-700 pt-4 mt-4">
 
     <div class="flex items-center gap-3 min-w-0">
 
@@ -72,7 +78,13 @@
             {{ user.email }}
           {% endif %}
         </p>
-        <p class="text-xs text-gray-400">Authenticated</p>
+        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold mt-1
+          {% if user_role == 'ADMIN' %} bg-red-600/30 text-red-200 border border-red-500
+          {% elif user_role == 'ANALYST' %} bg-yellow-600/30 text-yellow-200 border border-yellow-500
+          {% else %} bg-blue-600/30 text-blue-200 border border-blue-500 {% endif %}">
+          {% if user_role == 'ADMIN' %}<i class="fas fa-crown"></i>{% elif user_role == 'ANALYST' %}<i class="fas fa-magnifying-glass"></i>{% else %}<i class="fas fa-eye"></i>{% endif %}
+          {{ user_role|title }}
+        </span>
       </div>
     </div>
 
@@ -94,107 +106,249 @@
 <main class="flex-1 p-6 space-y-8 ml-64">
 
 <!-- Header -->
-<header class="bg-slate-800 p-6 rounded-2xl text-center">
+<header class="bg-slate-800 p-6 rounded-2xl text-center border border-gray-700">
   <h2 class="text-4xl font-extrabold text-cyan-400">AI Intrusion Detection System</h2>
-  <p class="text-gray-400">Real-Time Network Monitoring</p>
+  <p class="text-gray-400 mt-2">Real-Time Network Monitoring & Threat Prevention</p>
 </header>
 
 <!-- ================= STATS ================= -->
 <section class="grid grid-cols-1 md:grid-cols-4 gap-6">
-  <div class="bg-slate-800 p-6 rounded-2xl">
-    <h3 class="text-cyan-400">Active Alerts</h3>
-    <h2 id="activeAlerts" class="text-4xl font-bold">0</h2>
-    <p class="text-sm text-gray-400">Last 24h</p>
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700 card-hover">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-cyan-400 font-semibold text-sm uppercase">Active Alerts</h3>
+      <i class="fas fa-bell text-xl text-cyan-400"></i>
+    </div>
+    <h2 id="activeAlerts" class="text-4xl font-bold text-red-400">0</h2>
+    <p class="text-xs text-gray-400 mt-2">Last 24 hours</p>
   </div>
 
-  <div class="bg-slate-800 p-6 rounded-2xl">
-    <h3 class="text-cyan-400">Network Traffic</h3>
-    <h2 id="networkTraffic" class="text-4xl font-bold">0 GB</h2>
-    <p class="text-sm text-gray-400">Today</p>
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700 card-hover">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-cyan-400 font-semibold text-sm uppercase">Network Traffic</h3>
+      <i class="fas fa-wifi text-xl text-cyan-400"></i>
+    </div>
+    <h2 id="networkTraffic" class="text-4xl font-bold text-blue-400">0 GB</h2>
+    <p class="text-xs text-gray-400 mt-2">Today</p>
   </div>
 
-  <div class="bg-slate-800 p-6 rounded-2xl">
-    <h3 class="text-cyan-400">Accuracy</h3>
-    <h2 id="accuracy" class="text-4xl font-bold">97%</h2>
-    <p class="text-sm text-gray-400">ML Model</p>
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700 card-hover">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-cyan-400 font-semibold text-sm uppercase">Accuracy</h3>
+      <i class="fas fa-crosshairs text-xl text-cyan-400"></i>
+    </div>
+    <h2 id="accuracy" class="text-4xl font-bold text-green-400">97%</h2>
+    <p class="text-xs text-gray-400 mt-2">ML Model</p>
   </div>
 
-  <div class="bg-slate-800 p-6 rounded-2xl">
-    <h3 class="text-cyan-400">Uptime</h3>
-    <h2 id="uptime" class="text-4xl font-bold">99.9%</h2>
-    <p class="text-sm text-gray-400">This Week</p>
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700 card-hover">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-cyan-400 font-semibold text-sm uppercase">Uptime</h3>
+      <i class="fas fa-check-circle text-xl text-cyan-400"></i>
+    </div>
+    <h2 id="uptime" class="text-4xl font-bold text-emerald-400">99.9%</h2>
+    <p class="text-xs text-gray-400 mt-2">This Week</p>
   </div>
 </section>
 
 <!-- ================= CHARTS ================= -->
 <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <div class="bg-slate-800 p-6 rounded-2xl">
-    <h3 class="text-cyan-400 mb-4">Attack Distribution</h3>
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700 card-hover">
+    <div class="flex items-center gap-2 mb-4">
+      <i class="fas fa-fan text-cyan-400"></i>
+      <h3 class="text-cyan-400 font-bold">Attack Distribution</h3>
+    </div>
     <canvas id="attackPie"></canvas>
   </div>
 
-  <div class="bg-slate-800 p-6 rounded-2xl">
-    <h3 class="text-cyan-400 mb-4">Alerts Over Time</h3>
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700 card-hover">
+    <div class="flex items-center gap-2 mb-4">
+      <i class="fas fa-chart-line text-cyan-400"></i>
+      <h3 class="text-cyan-400 font-bold">Alerts Over Time</h3>
+    </div>
     <canvas id="alertsLine"></canvas>
   </div>
 
-  <div class="bg-slate-800 p-6 rounded-2xl">
-    <h3 class="text-cyan-400 mb-4">Attack Types</h3>
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700 card-hover">
+    <div class="flex items-center gap-2 mb-4">
+      <i class="fas fa-bars text-cyan-400"></i>
+      <h3 class="text-cyan-400 font-bold">Attack Types</h3>
+    </div>
     <canvas id="attackBar"></canvas>
   </div>
 
-  <div class="bg-slate-800 p-6 rounded-2xl">
-    <h3 class="text-cyan-400 mb-4">Threat Radar</h3>
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700 card-hover">
+    <div class="flex items-center gap-2 mb-4">
+      <i class="fas fa-radar text-cyan-400"></i>
+      <h3 class="text-cyan-400 font-bold">Threat Radar</h3>
+    </div>
     <canvas id="attackRadar"></canvas>
   </div>
 </section>
 
 <!-- ================= AI/ML ATTACK DETECTION ================= -->
-<section class="bg-slate-800 p-6 rounded-2xl">
-  <div class="flex justify-between items-center mb-4">
-    <h3 class="text-cyan-400 text-lg font-bold">AI/ML Attack Detection</h3>
-    <span id="detectionCountBadge" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold">0</span>
+<section class="bg-slate-800 p-6 rounded-2xl border border-gray-700">
+  <div class="flex justify-between items-center mb-6">
+    <div class="flex items-center gap-2">
+      <i class="fas fa-brain text-cyan-400 text-xl"></i>
+      <h3 class="text-cyan-400 text-lg font-bold">AI/ML Attack Detection</h3>
+    </div>
+    <span id="detectionCountBadge" class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-bold">0</span>
   </div>
   
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-    <div class="bg-slate-700 p-4 rounded-lg">
-      <div class="text-gray-400 text-sm">Total Attacks (24h)</div>
-      <div id="totalAttacks24h" class="text-2xl font-bold text-yellow-400">0</div>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+    <div class="bg-slate-700 p-4 rounded-lg border border-gray-600">
+      <div class="flex items-center gap-2 mb-2">
+        <i class="fas fa-hourglass text-yellow-400"></i>
+        <div class="text-gray-400 text-xs uppercase tracking-wider">Total Attacks (24h)</div>
+      </div>
+      <div id="totalAttacks24h" class="text-3xl font-bold text-yellow-400">0</div>
     </div>
-    <div class="bg-slate-700 p-4 rounded-lg">
-      <div class="text-gray-400 text-sm">Avg AI Confidence</div>
-      <div id="avgConfidence" class="text-2xl font-bold text-blue-400">0%</div>
+    <div class="bg-slate-700 p-4 rounded-lg border border-gray-600">
+      <div class="flex items-center gap-2 mb-2">
+        <i class="fas fa-percentage text-blue-400"></i>
+        <div class="text-gray-400 text-xs uppercase tracking-wider">Avg AI Confidence</div>
+      </div>
+      <div id="avgConfidence" class="text-3xl font-bold text-blue-400">0%</div>
     </div>
-    <div class="bg-slate-700 p-4 rounded-lg">
-      <div class="text-gray-400 text-sm">Critical Threats</div>
-      <div id="criticalThreats" class="text-2xl font-bold text-red-400">0</div>
+    <div class="bg-slate-700 p-4 rounded-lg border border-gray-600">
+      <div class="flex items-center gap-2 mb-2">
+        <i class="fas fa-triangle-exclamation text-red-400"></i>
+        <div class="text-gray-400 text-xs uppercase tracking-wider">Critical Threats</div>
+      </div>
+      <div id="criticalThreats" class="text-3xl font-bold text-red-400">0</div>
     </div>
   </div>
   
   <div id="attackDetectionList" class="space-y-2 max-h-96 overflow-y-auto">
-    <div class="text-gray-400 text-center py-8">No attacks detected yet</div>
+    <div class="text-gray-400 text-center py-8"><i class="fas fa-shield-check text-green-400 text-2xl mb-2 block"></i>No attacks detected yet</div>
   </div>
 </section>
 
 <!-- ================= RECENT ALERTS & BLOCKED IPS ================= -->
 <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <div class="bg-slate-800 p-6 rounded-2xl">
-    <h3 class="text-cyan-400 mb-4">Recent Alerts</h3>
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700 card-hover">
+    <div class="flex items-center gap-2 mb-4">
+      <i class="fas fa-triangle-exclamation text-yellow-400"></i>
+      <h3 class="text-cyan-400 font-bold">Recent Alerts</h3>
+    </div>
     <ul id="recentAlertsList" class="space-y-2 text-sm text-gray-300 max-h-60 overflow-auto">
-      <li>No alerts yet</li>
+      <li class="text-center text-gray-400 py-4">No alerts yet</li>
     </ul>
   </div>
 
-  <div class="bg-slate-800 p-6 rounded-2xl">
+  <div class="bg-slate-800 p-6 rounded-2xl border border-gray-700 card-hover">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-cyan-400">Blocked IPs</h3>
-      <span id="blockedCountBadge" class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">0</span>
+      <div class="flex items-center gap-2">
+        <i class="fas fa-ban text-red-400"></i>
+        <h3 class="text-cyan-400 font-bold">Blocked IPs</h3>
+      </div>
+      <span id="blockedCountBadge" class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-bold">0</span>
     </div>
     <div id="blockedIPsContainer" class="space-y-3 max-h-80 overflow-y-auto">
       <div class="text-gray-400 text-center py-8">No blocked IPs</div>
     </div>
   </div>
 </section>
+
+<!-- ================= USER & ROLE MANAGEMENT (Admin & Analyst Only) ================= -->
+{% if user_role == 'ADMIN' or user_role == 'ANALYST' %}
+<section class="bg-slate-800 p-6 rounded-2xl border border-gray-700">
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-2">
+      <i class="fas fa-users text-cyan-400 text-xl"></i>
+      <h2 class="text-2xl font-bold text-cyan-400">User & Role Management</h2>
+    </div>
+    <span class="px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400">Management</span>
+  </div>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- User List -->
+    <div class="bg-slate-700 p-6 rounded-xl border border-gray-600 card-hover">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center text-blue-400 text-lg"><i class="fas fa-user-group"></i></div>
+        <div>
+          <h3 class="font-bold text-white">Active Users</h3>
+          <p class="text-xs text-gray-400">Manage system users</p>
+        </div>
+      </div>
+      
+      <div id="usersList" class="space-y-3">
+        <div class="text-center text-gray-400 py-4">
+          <i class="fas fa-spinner text-xl animate-spin"></i>
+          <p class="mt-2">Loading users...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Role Assignment -->
+    <div class="bg-slate-700 p-6 rounded-xl border border-gray-600 card-hover">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center text-purple-400 text-lg"><i class="fas fa-shield-alt"></i></div>
+        <div>
+          <h3 class="font-bold text-white">Add New User</h3>
+          <p class="text-xs text-gray-400">Assign roles and permissions</p>
+        </div>
+      </div>
+      
+      <div class="space-y-3">
+        <input type="email" id="newUserEmail" placeholder="Enter user email" class="w-full bg-slate-600 border border-gray-500 text-white py-2 px-3 rounded-lg focus:outline-none focus:border-cyan-400">
+        
+        <select id="newUserRole" class="w-full bg-slate-600 border border-gray-500 text-white py-2 px-3 rounded-lg focus:outline-none focus:border-cyan-400">
+          <option value="">Select Role</option>
+          <option value="ADMIN">Admin (Full Access)</option>
+          <option value="ANALYST">Analyst (Manage Users & Access)</option>
+          {% if user_role == 'ADMIN' %}
+          <option value="VIEWER">Viewer (View Only)</option>
+          {% endif %}
+        </select>
+        
+        {% if user_role == 'ADMIN' %}
+        <button onclick="addNewUser()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2 px-4 rounded-lg transition transform hover:scale-105 duration-200">
+          <i class="fas fa-plus mr-2"></i>Add User
+        </button>
+        {% else %}
+        <button onclick="addNewUser()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2 px-4 rounded-lg transition transform hover:scale-105 duration-200">
+          <i class="fas fa-plus mr-2"></i>Add Analyst/Viewer
+        </button>
+        {% endif %}
+        
+        <p class="text-gray-400 text-xs mt-2">
+          {% if user_role == 'ADMIN' %}
+          As Admin, you can assign any role to users.
+          {% else %}
+          As Analyst, you can assign Analyst and Viewer roles only.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Role Permissions Info -->
+  <div class="mt-6 p-4 bg-slate-600/50 rounded-lg border border-gray-600">
+    <h4 class="text-cyan-400 font-bold mb-3 flex items-center"><i class="fas fa-info-circle mr-2"></i>Role Permissions</h4>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+      <div>
+        <span class="inline-block px-2 py-1 rounded bg-red-600/30 text-red-200 border border-red-500 font-bold mb-1">Admin</span>
+        <p class="text-gray-300">✓ Full system access</p>
+        <p class="text-gray-300">✓ Django admin panel</p>
+        <p class="text-gray-300">✓ User management</p>
+      </div>
+      <div>
+        <span class="inline-block px-2 py-1 rounded bg-yellow-600/30 text-yellow-200 border border-yellow-500 font-bold mb-1">Analyst</span>
+        <p class="text-gray-300">✓ Dashboard access</p>
+        <p class="text-gray-300">✓ Manage users</p>
+        <p class="text-gray-300">✗ No Admin/Analyst creation</p>
+      </div>
+      <div>
+        <span class="inline-block px-2 py-1 rounded bg-blue-600/30 text-blue-200 border border-blue-500 font-bold mb-1">Viewer</span>
+        <p class="text-gray-300">✓ View dashboard</p>
+        <p class="text-gray-300">✓ Analyze data</p>
+        <p class="text-gray-300">✗ No modifications</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
 
 <!-- ================= TOAST ================= -->
 <!-- AI Intrusion Alert -->
@@ -687,6 +841,146 @@ setInterval(() => {
 
 updateDashboard();
 setInterval(updateDashboard, 5000);
+
+// ==================== USER MANAGEMENT FUNCTIONS ====================
+function getCookie(name) {
+  const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+
+function loadUsers() {
+  {% if user_role == 'ADMIN' or user_role == 'ANALYST' %}
+  fetch('/api/users/')
+    .then(r => r.json())
+    .then(data => {
+      const usersList = document.getElementById('usersList');
+      usersList.innerHTML = '';
+      
+      if (data.users && data.users.length > 0) {
+        data.users.forEach(user => {
+          const userDiv = document.createElement('div');
+          userDiv.className = 'flex justify-between items-center p-3 bg-slate-600/50 rounded-lg border border-gray-600';
+          
+          const roleColor = user.role === 'ADMIN' ? 'text-red-400' : user.role === 'ANALYST' ? 'text-yellow-400' : 'text-blue-400';
+          const roleIcon = user.role === 'ADMIN' ? 'fas fa-crown' : user.role === 'ANALYST' ? 'fas fa-magnifying-glass' : 'fas fa-eye';
+          
+          userDiv.innerHTML = `
+            <div>
+              <p class="font-semibold text-white">${user.email}</p>
+              <p class="text-xs text-gray-400">${user.name || 'User'}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-1 rounded text-xs font-semibold ${roleColor}">
+                <i class="${roleIcon}"></i> ${user.role}
+              </span>
+              {% if user_role == 'ADMIN' %}
+              <button onclick="removeUser('${user.id}')" class="px-2 py-1 bg-red-600/30 hover:bg-red-600/50 text-red-300 rounded text-xs transition">
+                <i class="fas fa-trash"></i>
+              </button>
+              {% endif %}
+            </div>
+          `;
+          usersList.appendChild(userDiv);
+        });
+      } else {
+        usersList.innerHTML = '<div class="text-center text-gray-400 py-4">No users found</div>';
+      }
+    })
+    .catch(e => {
+      console.log('Error loading users:', e);
+      document.getElementById('usersList').innerHTML = '<div class="text-center text-red-400 py-4">Error loading users</div>';
+    });
+  {% endif %}
+}
+
+function addNewUser() {
+  {% if user_role == 'ADMIN' or user_role == 'ANALYST' %}
+  const email = document.getElementById('newUserEmail').value.trim();
+  const role = document.getElementById('newUserRole').value;
+  
+  if (!email || !role) {
+    alert('Please fill in all fields');
+    return;
+  }
+  
+  // Analyst can only assign ANALYST and VIEWER roles
+  {% if user_role == 'ANALYST' %}
+  if (role === 'ADMIN') {
+    alert('You can only assign Analyst and Viewer roles.');
+    return;
+  }
+  {% endif %}
+  
+  const formData = new FormData();
+  formData.append('email', email);
+  formData.append('role', role);
+  
+  fetch('/api/add-user/', {
+    method: 'POST',
+    body: formData,
+    headers: {'X-CSRFToken': getCookie('csrftoken')}
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      showNotification(`User added successfully!`, 'success');
+      document.getElementById('newUserEmail').value = '';
+      document.getElementById('newUserRole').value = '';
+      loadUsers();
+    } else {
+      alert('Error: ' + (data.error || 'Unknown error'));
+    }
+  })
+  .catch(e => alert('Error adding user: ' + e));
+  {% endif %}
+}
+
+function removeUser(userId) {
+  if (!confirm('Are you sure you want to remove this user?')) return;
+  
+  fetch('/api/remove-user/', {
+    method: 'POST',
+    body: JSON.stringify({user_id: userId}),
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      showNotification('User removed successfully!', 'success');
+      loadUsers();
+    } else {
+      alert('Error: ' + (data.error || 'Unknown error'));
+    }
+  })
+  .catch(e => alert('Error removing user: ' + e));
+}
+
+function showNotification(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `animate-fade fixed top-6 right-6 px-6 py-3 rounded-lg text-white font-semibold z-50`;
+  toast.style.maxWidth = '400px';
+  
+  if (type === 'success') {
+    toast.classList.add('bg-gradient-to-r', 'from-green-500', 'to-emerald-500');
+  } else if (type === 'error') {
+    toast.classList.add('bg-gradient-to-r', 'from-red-500', 'to-pink-500');
+  } else {
+    toast.classList.add('bg-gradient-to-r', 'from-blue-500', 'to-cyan-500');
+  }
+  
+  toast.innerText = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => toast.remove(), 4000);
+}
+
+// Load users on page load if admin or analyst
+{% if user_role == 'ADMIN' or user_role == 'ANALYST' %}
+loadUsers();
+{% endif %}
 
 // WebSocket real-time updates
 (function(){
