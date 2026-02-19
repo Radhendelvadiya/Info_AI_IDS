@@ -409,5 +409,294 @@ def get_model_status(request):
     })
 
 
+# ================================
+# USER MANAGEMENT VIEWS
+# ================================
+
+@login_required
+@admin_or_analyst_only
+def user_management(request):
+    """Display user management page"""
+    from accounts.models import UserProfile
+    
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        context = {
+            'user': request.user,
+            'user_role': user_profile.role
+        }
+        return render(request, 'user_management.html', context)
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'User profile not found'}, status=403)
+
+
+@login_required
+@admin_or_analyst_only
+def get_users(request):
+    """Get list of all users with their roles and auth method"""
+    from accounts.models import UserProfile
+    from django.contrib.auth.models import User
+    
+    try:
+        users = User.objects.all().select_related('userprofile')
+        users_data = []
+        
+        for user in users:
+            try:
+                role = user.userprofile.role
+                auth_method = user.userprofile.auth_method
+            except UserProfile.DoesNotExist:
+                role = "VIEWER"
+                auth_method = "email"
+            
+            users_data.append({
+                'id': user.id,
+                'email': user.email,
+                'role': role,
+                'auth_method': auth_method
+            })
+        
+        return JsonResponse({
+            'ok': True,
+            'users': users_data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'ok': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+@admin_or_analyst_only
+@require_POST
+def add_user(request):
+    """Create a new user with specified role"""
+    from accounts.models import UserProfile
+    from django.contrib.auth.models import User
+    
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        email = request.POST.get('email', '').strip().lower()
+        role = request.POST.get('role', 'VIEWER').upper()
+        
+        # Validate input
+        if not email:
+            return JsonResponse({
+                'ok': False,
+                'error': 'Email is required'
+            }, status=400)
+        
+        # Basic email format validation
+        if '@' not in email or '.' not in email:
+            return JsonResponse({
+                'ok': False,
+                'error': 'Invalid email format'
+            }, status=400)
+        
+        # Analyst can't create Admin users
+        if user_profile.role == 'ANALYST' and role == 'ADMIN':
+            return JsonResponse({
+                'ok': False,
+                'error': 'You can only assign Analyst and Viewer roles'
+            }, status=403)
+        
+        # Validate role
+        if role not in ['ADMIN', 'ANALYST', 'VIEWER']:
+            return JsonResponse({
+                'ok': False,
+                'error': 'Invalid role. Must be ADMIN, ANALYST, or VIEWER'
+            }, status=400)
+        
+        # Check if user already exists (case-insensitive)
+        if User.objects.filter(email__iexact=email).exists():
+            return JsonResponse({
+                'ok': False,
+                'error': 'An account with this email already exists. Please use a different email.'
+            }, status=400)
+        
+        # Create user (username = sanitized email)
+        username_base = email.split('@')[0]
+        username = username_base
+        counter = 1
+        
+        # Ensure unique username by appending counter if needed
+        while User.objects.filter(username__iexact=username).exists():
+            username = f"{username_base}_{counter}"
+            counter += 1
+        
+        # Create user with a secure random password. Some custom managers may not
+        # implement `make_random_password`, so use it if available or fall back
+        # to the `secrets` module.
+        import secrets
+        make_pw = getattr(User.objects, 'make_random_password', None)
+        if callable(make_pw):
+            random_password = make_pw()
+        else:
+            random_password = secrets.token_urlsafe(12)
+
+        # Create user
+        new_user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=random_password
+        )
+        
+        # Create or update user profile with role
+        user_profile_obj, created = UserProfile.objects.get_or_create(
+            user=new_user,
+            defaults={'role': role}
+        )
+        if not created:
+            user_profile_obj.role = role
+            user_profile_obj.save()
+        
+        return JsonResponse({
+            'ok': True,
+            'message': f'User {email} created with role {role}',
+            'user_id': new_user.id
+        })
+    except UserProfile.DoesNotExist:
+        return JsonResponse({
+            'ok': False,
+            'error': 'User profile not found'
+        }, status=403)
+    except Exception as e:
+        return JsonResponse({
+            'ok': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+@admin_or_analyst_only
+@require_POST
+def manage_user(request):
+    """Update user role"""
+    from accounts.models import UserProfile
+    from django.contrib.auth.models import User
+    
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        user_id = request.POST.get('user_id')
+        new_role = request.POST.get('role', '').upper()
+        
+        if not user_id or not new_role:
+            return JsonResponse({
+                'ok': False,
+                'error': 'Missing user_id or role'
+            }, status=400)
+        
+        # Validate role
+        if new_role not in ['ADMIN', 'ANALYST', 'VIEWER']:
+            return JsonResponse({
+                'ok': False,
+                'error': 'Invalid role'
+            }, status=400)
+        
+        # Get target user
+        target_user = User.objects.get(id=user_id)
+        target_profile = UserProfile.objects.get(user=target_user)
+        
+        # Analyst can't assign Admin role
+        if user_profile.role == 'ANALYST' and new_role == 'ADMIN':
+            return JsonResponse({
+                'ok': False,
+                'error': 'You can only assign Analyst and Viewer roles'
+            }, status=403)
+        
+        # Analyst can't change another Analyst's role
+        if user_profile.role == 'ANALYST' and target_profile.role == 'ANALYST':
+            return JsonResponse({
+                'ok': False,
+                'error': 'You cannot change roles of other Analysts'
+            }, status=403)
+        
+        # Update role
+        target_profile.role = new_role
+        target_profile.save()
+        
+        return JsonResponse({
+            'ok': True,
+            'message': f'User role updated to {new_role}'
+        })
+    except User.DoesNotExist:
+        return JsonResponse({
+            'ok': False,
+            'error': 'User not found'
+        }, status=404)
+    except UserProfile.DoesNotExist:
+        return JsonResponse({
+            'ok': False,
+            'error': 'User profile not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'ok': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+@admin_or_analyst_only
+@require_POST
+def remove_user(request):
+    """Delete a user"""
+    from accounts.models import UserProfile
+    from django.contrib.auth.models import User
+    
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        user_id = request.POST.get('user_id')
+        
+        if not user_id:
+            return JsonResponse({
+                'ok': False,
+                'error': 'user_id is required'
+            }, status=400)
+        
+        # Can't delete yourself
+        if int(user_id) == request.user.id:
+            return JsonResponse({
+                'ok': False,
+                'error': 'You cannot delete your own account'
+            }, status=400)
+        
+        # Get target user
+        target_user = User.objects.get(id=user_id)
+        target_profile = UserProfile.objects.get(user=target_user)
+        
+        # Analyst can only delete Viewer users
+        if user_profile.role == 'ANALYST':
+            if target_profile.role != 'VIEWER':
+                return JsonResponse({
+                    'ok': False,
+                    'error': 'You can only delete Viewer users'
+                }, status=403)
+        
+        # Delete user
+        target_user.delete()
+        
+        return JsonResponse({
+            'ok': True,
+            'message': 'User deleted successfully'
+        })
+    except User.DoesNotExist:
+        return JsonResponse({
+            'ok': False,
+            'error': 'User not found'
+        }, status=404)
+    except UserProfile.DoesNotExist:
+        return JsonResponse({
+            'ok': False,
+            'error': 'User profile not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'ok': False,
+            'error': str(e)
+        }, status=500)
+
+
 
 
